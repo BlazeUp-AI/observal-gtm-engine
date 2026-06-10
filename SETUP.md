@@ -105,43 +105,51 @@ Without Reacher, contacts stay `unverified` and the Outreach Engine refuses to s
 
 ---
 
-## 5. Cold-email domains + inboxes (1–2 hours + 14-day warmup clock)
+## 5. Cold-email domains + inboxes via AgentMail (~30 min + 14-day warmup clock)
 
-This is the longest-lead-time item — start it first in real life.
+This is the longest-lead-time item — start it first in real life. **Never send cold email from observal.io itself.** Lookalike domains in hand (e.g. `useobserval.xyz`, `joinobserval.xyz`, `tryobserval.xyz`, `getobserval.xyz` on Porkbun).
 
-### 5a. Buy 3 lookalike domains
+> Note: `.xyz` TLDs carry a deliverability handicap (spam filters distrust the cheapest TLDs). Authenticate properly, warm up slowly, and watch the bounce/spam alarms. If inbox placement disappoints, add a `.com`/`.io` lookalike.
 
-E.g. if your product is `observal.io`, buy `observalhq.com`, `getobserval.com`, `tryobserval.com` (Namecheap/Cloudflare, ~$30 total). **Never send cold email from observal.io itself.**
+### 5a. AgentMail plan + API key
 
-### 5b. Google Workspace
+1. Custom domains require the **Developer plan ($20/mo)** — upgrade at https://console.agentmail.to.
+2. Create an API key in the console and put it in `.env`: `AGENTMAIL_API_KEY=am_...`
 
-1. Create a Google Workspace account (Business Starter, ~$7/user/mo) per domain — 4 inboxes total spread across the 3 domains (e.g. `aryan@observalhq.com`, `aryan@getobserval.com`, `team@getobserval.com`, `aryan@tryobserval.com`).
-2. For each domain, in your DNS provider set:
-   - **MX** records (Google gives you the values during setup)
-   - **SPF**: TXT `v=spf1 include:_spf.google.com ~all`
-   - **DKIM**: Admin console → Apps → Google Workspace → Gmail → Authenticate email → generate, then add the TXT record
-   - **DMARC**: TXT at `_dmarc.<domain>`: `v=DMARC1; p=quarantine; rua=mailto:you@yourdomain.com`
-3. Enroll every domain in **Google Postmaster Tools** (https://postmaster.google.com) — this is where the spam-rate alarm reads from.
-4. On each domain, set up a redirect of the root domain → observal.io (registrar-level forward is fine).
+### 5b. Register each domain and set DNS on Porkbun
 
-### 5c. Connect each inbox via Composio Gmail
-
-For **each** of the 4 inboxes: in Composio → Gmail → Connect, and authorize while logged into that inbox. Use entity id `inbox:<email>` (e.g. `inbox:aryan@observalhq.com`) — that's how the sender code routes.
-
-### 5d. Register the inboxes with the engine
+For each sending domain:
 
 ```powershell
-npm run cli -- inbox add aryan@observalhq.com
-npm run cli -- inbox add aryan@getobserval.com
-npm run cli -- inbox add team@getobserval.com
-npm run cli -- inbox add aryan@tryobserval.com
+npm run cli -- domain add useobserval.xyz
 ```
 
-This starts each inbox's ramp clock (10/day, +5/day, ceiling 40).
+This registers the domain with AgentMail and prints the exact DNS records (MX, SPF, DKIM, DMARC). Add them in Porkbun: domain → **DNS Records**. Then check until everything shows verified:
 
-### 5e. Warm up (days 1–14)
+```powershell
+npm run cli -- domain status useobserval.xyz
+```
 
-Send 5–10 *manual, real* emails per inbox per day for the first week (to colleagues, friends, your own accounts — and reply to them). The engine's ramp caps handle the rest. Don't flip `DRY_RUN=false` before day ~5.
+Repeat for the other domains. AgentMail manages SPF/DKIM/DMARC — no manual record crafting needed.
+
+Also set a registrar-level URL forward of each root domain → observal.io (Porkbun → domain → URL Forwarding), so prospects who type the domain land somewhere real.
+
+### 5c. Provision the inboxes
+
+One command per inbox — this creates the inbox in AgentMail **and** starts its ramp clock (10/day, +5/day, ceiling 40):
+
+```powershell
+npm run cli -- inbox add aryan@useobserval.xyz
+npm run cli -- inbox add aryan@joinobserval.xyz
+npm run cli -- inbox add aryan@tryobserval.xyz
+npm run cli -- inbox add aryan@getobserval.xyz
+```
+
+No per-inbox OAuth — sending and reply-polling go through the AgentMail API key.
+
+### 5d. Warm up (days 1–14)
+
+Send 5–10 *manual, real* emails per inbox per day for the first week (to colleagues, friends, your own accounts — and reply to them). You can send manually via the AgentMail console or CLI. The engine's ramp caps handle the rest. Don't flip `DRY_RUN=false` before day ~5.
 
 ---
 
@@ -192,10 +200,10 @@ Only after steps 1–5 are done and inboxes are ≥5 days into warmup:
 
 | Day | Task | Why first |
 |---|---|---|
-| 1 | 5a+5b: buy domains, create inboxes, DNS | 14-day warmup clock starts ticking |
+| 1 | 5a+5b: AgentMail plan, register domains, Porkbun DNS | 14-day warmup clock starts ticking |
 | 1 | Step 1: GitHub token | 5 minutes, unlocks contact discovery |
 | 2 | Step 2: Discord channels + webhooks | makes all agents visible |
 | 2 | Step 4: Reacher | unlocks email verification |
 | 3 | Step 3: Composio Reddit | unlocks full Signal Scout |
-| 3 | 5c+5d: connect + register inboxes | engine starts dry-run planning real sends |
+| 3 | 5c: provision inboxes | engine starts dry-run planning real sends |
 | 5+ | Steps 6–8 | metrics, dossiers, go-live |

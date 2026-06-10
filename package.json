@@ -17,6 +17,7 @@
     "@ai-sdk/google": "^2.0.0",
     "@composio/core": "^0.2.0",
     "@composio/vercel": "^0.2.0",
+    "agentmail": "^0.5.10",
     "ai": "^5.0.0",
     "better-sqlite3": "^12.0.0",
     "discord-interactions": "^4.4.0",

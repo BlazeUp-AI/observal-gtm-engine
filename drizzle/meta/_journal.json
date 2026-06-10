@@ -8,6 +8,13 @@
       "when": 1781087920191,
       "tag": "0000_solid_peter_quill",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1781096000000,
+      "tag": "0001_agentmail_provider_id",
+      "breakpoints": true
     }
   ]
 }

@@ -4,6 +4,7 @@ import { runSignalScout } from './agents/signal-scout/index.js';
 import { runReplyTriager } from './agents/reply-triager/index.js';
 import { runScorecard } from './agents/scorecard/index.js';
 import { db, schema } from './core/db.js';
+import { getAgentMail } from './core/agentmail.js';
 import { eq } from 'drizzle-orm';
 
 const [cmd, sub, ...rest] = process.argv.slice(2);
@@ -14,18 +15,57 @@ const usage = `gtm-engine CLI
   scout run [hours]       run Signal Scout once
   triage run              run Reply Triager once
   report now              run Scorecard Reporter once
-  inbox add <email>       register a sending inbox (starts its ramp clock)
+  domain add <domain>     register a sending domain with AgentMail, print DNS records
+  domain status <domain>  show verification status + DNS records
+  inbox add <email>       provision an AgentMail inbox + start its ramp clock
   test e2e                synthetic contact -> outreach dry-run -> show planned email
   pause all|<domain>      kill switch
   resume all|<domain>     re-enable sending`;
 
+function printDnsRecords(records: { type: string; name: string; value: string; status: string; priority?: number }[]) {
+  for (const r of records) {
+    const prio = r.priority !== undefined ? ` (priority ${r.priority})` : '';
+    console.log(`  [${r.status}] ${r.type.toUpperCase().padEnd(5)} ${r.name}\n          -> ${r.value}${prio}`);
+  }
+}
+
 async function main() {
   switch (`${cmd} ${sub ?? ''}`.trim()) {
+    case 'domain add': {
+      const domain = rest[0];
+      if (!domain?.includes('.')) return console.log('usage: domain add yourdomain.com');
+      const agentmail = getAgentMail();
+      if (!agentmail) return console.log('Set AGENTMAIL_API_KEY in .env first.');
+      const created = await agentmail.domains.create({ domain, feedbackEnabled: true });
+      console.log(`Domain registered with AgentMail: ${domain} (status: ${created.status})`);
+      console.log('Add these DNS records in Porkbun (DNS settings for the domain):');
+      printDnsRecords(created.records);
+      console.log('\nThen run: npm run cli -- domain status ' + domain);
+      return;
+    }
+    case 'domain status': {
+      const domain = rest[0];
+      if (!domain) return console.log('usage: domain status yourdomain.com');
+      const agentmail = getAgentMail();
+      if (!agentmail) return console.log('Set AGENTMAIL_API_KEY in .env first.');
+      const d = await agentmail.domains.get(domain);
+      console.log(`${d.domain}: ${d.status}`);
+      printDnsRecords(d.records);
+      return;
+    }
     case 'inbox add': {
       const email = rest[0];
       if (!email?.includes('@')) return console.log('usage: inbox add you@domain.com');
-      await db.insert(schema.inboxes).values({ email, domain: email.split('@')[1], rampStartedAt: Date.now() }).onConflictDoNothing();
-      console.log(`Inbox registered: ${email} — ramp clock started (day 1 cap: 10/day). Connect its Gmail in Composio with user id "inbox:${email}".`);
+      const [username, domain] = email.split('@');
+      const agentmail = getAgentMail();
+      if (agentmail) {
+        const inbox = await agentmail.inboxes.create({ username, domain, clientId: `gtm-${email}` });
+        console.log(`AgentMail inbox provisioned: ${inbox.inboxId}`);
+      } else {
+        console.log('No AGENTMAIL_API_KEY — registered locally only; provision in AgentMail later.');
+      }
+      await db.insert(schema.inboxes).values({ email, domain, rampStartedAt: Date.now() }).onConflictDoNothing();
+      console.log(`Inbox registered: ${email} — ramp clock started (day 1 cap: 10/day).`);
       return;
     }
     case 'test e2e': {

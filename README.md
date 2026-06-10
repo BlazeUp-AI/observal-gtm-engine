@@ -2,7 +2,7 @@
 
 The system that executes the observal.io 20-day GTM playbook: **seven agents, one process, one SQLite database, every external action audited.** Companion docs live in the marketing-synthesis repo: `deliverables/observal-gtm-playbook.md` (strategy, §9 = automation spec) and `deliverables/gtm-engine-build-plan.md` (this codebase's plan).
 
-Brains: **Gemini** (via Vercel AI SDK). Tool layer: **Composio** (Gmail, Reddit, X, GitHub, Sheets). Notifications: **Discord** (plain channel webhooks). Email verification: **Reacher** (self-hosted). Job scraping: **JobSpy** (Python sidecar).
+Brains: **Gemini** (via Vercel AI SDK). Email: **AgentMail** (API inboxes on cold-email domains, send/receive, managed SPF/DKIM/DMARC). Tool layer: **Composio** (Reddit, X, GitHub, Sheets). Notifications: **Discord** (plain channel webhooks). Email verification: **Reacher** (self-hosted). Job scraping: **JobSpy** (Python sidecar).
 
 ## Agents
 
@@ -11,7 +11,7 @@ Brains: **Gemini** (via Vercel AI SDK). Tool layer: **Composio** (Gmail, Reddit,
 | Prospector | nightly 02:00 | built — HN + GitHub + JobSpy sources, Gemini ICP scoring |
 | Outreach Engine | every 30 min, 08–17 | built — state machine, personalization, QA, dry-run verified |
 | Signal Scout | hourly | built — HN live, Reddit pending Composio connection |
-| Reply Triager | every 5 min | built — pending Gmail connection |
+| Reply Triager | every 5 min | built — polls AgentMail inboxes |
 | Dossier Builder | signup webhook | built — pending Discord webhook |
 | Scorecard Reporter | daily 08:00 | built — PostHog wiring stubbed |
 | Drafting Copilot | Discord `/draft` | built — pending Discord app |

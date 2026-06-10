@@ -1,0 +1,1 @@
+ALTER TABLE `sends` RENAME COLUMN `gmail_message_id` TO `provider_message_id`;

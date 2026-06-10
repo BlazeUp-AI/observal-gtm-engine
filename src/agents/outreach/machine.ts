@@ -119,7 +119,7 @@ export async function processDueSequences(): Promise<{ sent: number; blocked: nu
     }
 
     const nextStep = seq.step + 1;
-    await db.insert(schema.sends).values({ contactId: contact.id, step: nextStep, inboxId: inbox.id, gmailMessageId: messageId, subject, body, sentAt: Date.now() });
+    await db.insert(schema.sends).values({ contactId: contact.id, step: nextStep, inboxId: inbox.id, providerMessageId: messageId, subject, body, sentAt: Date.now() });
     await db
       .update(schema.sequences)
       .set({

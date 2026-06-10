@@ -53,7 +53,7 @@ export const sends = sqliteTable('sends', {
   contactId: integer('contact_id').notNull().references(() => contacts.id),
   step: integer('step').notNull(),
   inboxId: integer('inbox_id').notNull(),
-  gmailMessageId: text('gmail_message_id'),
+  providerMessageId: text('provider_message_id'), // AgentMail message id
   subject: text('subject'),
   body: text('body'),
   approvedBy: text('approved_by'), // review-gate audit: human | sampling

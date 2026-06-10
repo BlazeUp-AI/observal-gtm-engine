@@ -4,9 +4,8 @@ import { config } from './config.js';
 
 /**
  * Composio is the auth + execution layer for external tools that need OAuth:
- * Gmail (send/read), Reddit/X/GitHub (search), Google Sheets (views).
- * Discord notifications bypass Composio entirely — see core/discord.ts (plain webhooks).
- * One user id per logical identity; outreach inboxes each get their own connected account.
+ * Reddit/X/GitHub (search), Google Sheets (views).
+ * Email lives on AgentMail (core/agentmail.ts); Discord uses plain webhooks (core/discord.ts).
  */
 let _composio: Composio<VercelProvider> | null = null;
 
@@ -22,5 +21,4 @@ export function getComposio(): Composio<VercelProvider> | null {
 
 export const ENTITY = {
   system: 'gtm-engine', // Sheets, GitHub, Reddit, X
-  inbox: (email: string) => `inbox:${email}`, // per-inbox Gmail connections
 };

@@ -15,6 +15,10 @@ export const config = {
     apiKey: required('COMPOSIO_API_KEY'),
   },
 
+  agentmail: {
+    apiKey: process.env.AGENTMAIL_API_KEY ?? '', // email layer: send, receive, domains, inboxes
+  },
+
   githubToken: process.env.GITHUB_TOKEN ?? '', // free PAT; gates the GitHub source + commit-email discovery
 
   posthog: {

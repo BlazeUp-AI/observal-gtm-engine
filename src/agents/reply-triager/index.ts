@@ -3,7 +3,7 @@ import { eq, isNull, and } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { getComposio, ENTITY } from '../../core/composio.js';
+import { getAgentMail } from '../../core/agentmail.js';
 import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
 
@@ -17,13 +17,14 @@ const classificationSchema = z.object({
 
 /**
  * Reply Triager — every 5 min. Playbook §9.4 B3.
- * Polls unread threads on every inbox -> classifies -> stops sequence + suppresses
- * where applicable -> Slack #replies with a suggested draft. NEVER auto-sends.
+ * Polls unread messages on every AgentMail inbox -> classifies -> stops sequence +
+ * suppresses where applicable -> Discord #gtm-replies with a suggested draft.
+ * NEVER auto-sends. Processed messages are marked read so they aren't re-triaged.
  */
 export async function runReplyTriager() {
-  const composio = getComposio();
-  if (!composio) {
-    await audit('reply-triager', 'run.skipped', { reason: 'no COMPOSIO_API_KEY' });
+  const agentmail = getAgentMail();
+  if (!agentmail) {
+    await audit('reply-triager', 'run.skipped', { reason: 'no AGENTMAIL_API_KEY' });
     return;
   }
 
@@ -34,36 +35,43 @@ export async function runReplyTriager() {
   let processed = 0;
 
   for (const inbox of inboxes) {
-    let messages: GmailMessage[] = [];
+    let messages;
     try {
-      const result = await composio.tools.execute('GMAIL_FETCH_EMAILS', {
-        userId: ENTITY.inbox(inbox.email),
-        arguments: { query: 'is:unread -category:promotions', max_results: 20 },
-      });
-      messages = ((result.data as { messages?: GmailMessage[] })?.messages ?? []);
+      const result = await agentmail.inboxes.messages.list(inbox.email, { limit: 20, labels: ['unread'] });
+      messages = result.messages ?? [];
     } catch (err) {
       await audit('reply-triager', 'fetch.failed', { inbox: inbox.email, error: String(err) });
       continue;
     }
 
-    for (const msg of messages) {
-      const fromEmail = extractEmail(msg.sender ?? '');
+    for (const item of messages) {
+      const fromEmail = extractEmail(item.from ?? '');
       if (!fromEmail) continue;
 
-      const contact = await db.query.contacts.findFirst({ where: eq(schema.contacts.email, fromEmail) });
-      const body = (msg.messageText ?? msg.preview?.body ?? '').slice(0, 3000);
+      // The list endpoint returns previews — fetch the full message for the body.
+      // extractedText is the reply minus quoted history, exactly what the classifier needs.
+      const msg = await agentmail.inboxes.messages.get(inbox.email, item.messageId).catch(() => null);
+      const body = (msg?.extractedText ?? msg?.text ?? item.preview ?? '').slice(0, 3000);
+
+      // Mark read first so a crash mid-classification can't cause a re-triage loop.
+      await agentmail.inboxes.messages
+        .update(inbox.email, item.messageId, { addLabels: ['read'], removeLabels: ['unread'] })
+        .catch(() => {});
+
       if (!body.trim()) continue;
+
+      const contact = await db.query.contacts.findFirst({ where: eq(schema.contacts.email, fromEmail) });
 
       const out = await completeJson(
         'You triage replies to cold outreach for observal.io (a system of record for AI agents). Classify and draft.',
-        `Reply from ${msg.sender}:\n\n${body}`,
+        `Reply from ${item.from}:\n\n${body}`,
         classificationSchema,
         { qa: false },
       );
 
       await db.insert(schema.replies).values({
         contactId: contact?.id ?? null,
-        threadId: msg.threadId ?? null,
+        threadId: item.threadId ?? null,
         classification: out.classification,
         snippet: out.summary,
         suggestedDraft: out.suggestedDraft || null,
@@ -87,7 +95,7 @@ export async function runReplyTriager() {
 
       await discordPost(
         config.discord.replies,
-        `*${out.classification.toUpperCase()}* from ${msg.sender} (inbox: ${inbox.email})\n> ${out.summary}\n\n*Suggested draft:*\n${out.suggestedDraft || '_none_'}\n\n_Reply manually from ${inbox.email} — the triager never sends._`,
+        `*${out.classification.toUpperCase()}* from ${item.from} (inbox: ${inbox.email})\n> ${out.summary}\n\n*Suggested draft:*\n${out.suggestedDraft || '_none_'}\n\n_Reply manually from ${inbox.email} — the triager never sends._`,
       ).catch(() => {});
 
       processed++;
@@ -95,13 +103,6 @@ export async function runReplyTriager() {
   }
 
   await audit('reply-triager', 'run.end', { processed });
-}
-
-interface GmailMessage {
-  threadId?: string;
-  sender?: string;
-  messageText?: string;
-  preview?: { body?: string };
 }
 
 function extractEmail(sender: string): string | null {
