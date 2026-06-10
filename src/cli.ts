@@ -4,6 +4,7 @@ import { runSignalScout } from './agents/signal-scout/index.js';
 import { runReplyTriager } from './agents/reply-triager/index.js';
 import { runScorecard } from './agents/scorecard/index.js';
 import { runWarmup } from './agents/warmup/index.js';
+import { getGoLiveStatus, maybeAutoGoLive } from './core/go-live.js';
 import { db, schema } from './core/db.js';
 import { getAgentMail } from './core/agentmail.js';
 import { eq } from 'drizzle-orm';
@@ -17,6 +18,8 @@ const usage = `gtm-engine CLI
   triage run              run Reply Triager once
   report now              run Scorecard Reporter once
   warmup run              run Warmup agent once (safe: own inboxes + seeds only)
+  go-live status          show auto go-live readiness + campaign clock
+  go-live check           run the auto go-live gate now (same as scheduler)
   domain add <domain>     register a sending domain with AgentMail, print DNS records
   domain status <domain>  show verification status + DNS records
   inbox add <email>       provision an AgentMail inbox + start its ramp clock
@@ -104,6 +107,16 @@ async function main() {
     case 'triage run': return runReplyTriager();
     case 'report now': return runScorecard();
     case 'warmup run': return runWarmup();
+    case 'go-live status': {
+      const s = await getGoLiveStatus();
+      console.log(JSON.stringify(s, null, 2));
+      return;
+    }
+    case 'go-live check': {
+      const live = await maybeAutoGoLive();
+      console.log(live ? 'Go-live activated.' : 'Not ready yet — see: go-live status');
+      return;
+    }
     case `pause ${sub}`.trim():
       if (cmd === 'pause' && sub) return setPaused(sub, true);
       break;

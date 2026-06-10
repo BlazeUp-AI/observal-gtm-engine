@@ -150,3 +150,9 @@ export const auditLog = sqliteTable(
   },
   (t) => [index('audit_agent_idx').on(t.agent, t.at)],
 );
+
+export const engineSettings = sqliteTable('engine_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: integer('updated_at').notNull().default(now),
+});

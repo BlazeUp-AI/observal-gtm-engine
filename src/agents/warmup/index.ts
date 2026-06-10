@@ -2,6 +2,7 @@ import { and, eq, gte } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
+import { maybeAutoGoLive } from '../../core/go-live.js';
 import { getAgentMail } from '../../core/agentmail.js';
 import { complete } from '../../core/llm.js';
 
@@ -98,6 +99,7 @@ export async function runWarmup() {
   }
 
   await audit('warmup', 'run.end', { sent, replied });
+  await maybeAutoGoLive();
 }
 
 /** A sender counts as a warmup peer if it's one of our inboxes or a seed address. */

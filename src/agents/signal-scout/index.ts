@@ -44,11 +44,18 @@ export async function runSignalScout(hoursBack = 24) {
   if (composio) {
     for (const sub of ['AI_Agents', 'LangChain']) {
       try {
-        const result = await composio.tools.execute('REDDIT_RETRIEVE_REDDIT_POSTS', {
+        const result = await composio.tools.execute('REDDIT_RETRIEVE_REDDIT_POST', {
           userId: ENTITY.system,
           arguments: { subreddit: sub, size: 25 },
         });
-        const posts = (result.data as { posts?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number }[] })?.posts ?? [];
+        const raw = result.data as {
+          posts?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number }[];
+          posts_list?: { data?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number } }[];
+        };
+        const posts =
+          raw.posts ??
+          raw.posts_list?.map((item) => item.data).filter((p): p is NonNullable<typeof p> => Boolean(p)) ??
+          [];
         const kw = new RegExp(config.icpKeywords.map((k) => k.replace(/\s+/g, '\\s+')).join('|'), 'i');
         for (const p of posts) {
           const text = `${p.title ?? ''} ${p.selftext ?? ''}`;

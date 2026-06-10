@@ -1,5 +1,6 @@
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
+import { isDryRun, maybeAutoGoLive } from '../../core/go-live.js';
 
 import { enqueueNewContacts, processDueSequences } from './machine.js';
 
@@ -11,8 +12,9 @@ import { enqueueNewContacts, processDueSequences } from './machine.js';
  * cover review; the Sheets approve-column flow lands with the first live batch).
  */
 export async function runOutreach() {
-  await audit('outreach', 'run.start', { dryRun: config.dryRun });
+  await maybeAutoGoLive();
+  await audit('outreach', 'run.start', { dryRun: await isDryRun() });
   const enqueued = await enqueueNewContacts();
   const { sent, blocked } = await processDueSequences();
-  await audit('outreach', 'run.end', { enqueued, sent, blocked, dryRun: config.dryRun });
+  await audit('outreach', 'run.end', { enqueued, sent, blocked, dryRun: await isDryRun() });
 }

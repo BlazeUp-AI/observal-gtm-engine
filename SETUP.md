@@ -95,14 +95,27 @@ Needs the server publicly reachable (do this once deployed on the VPS):
 
 ---
 
-## 3. Composio: Reddit + Gmail connections (15 min)
+## 3. Composio: Reddit connection (5 min)
 
-In https://app.composio.dev → **Apps**:
+The engine uses Composio only for **Reddit** (Signal Scout). Email is AgentMail; Discord is webhooks — neither goes through Composio.
 
-1. **Reddit** → Connect (entity `gtm-engine`). Unlocks Signal Scout's Reddit search (r/LangChain, r/LocalLLaMA, etc.).
-2. **Gmail** → you'll connect this *per sending inbox* in step 5 — skip for now.
+1. Ensure `.env` has `COMPOSIO_API_KEY=ak_...` (from https://app.composio.dev → Settings).
+2. Auth config for Reddit should already exist in your Composio project (`reddit-0xy1w4`).
+3. Connect Reddit for entity **`gtm-engine`** (this exact string — hardcoded in `src/core/composio.ts`):
 
-**Verify Reddit:** `npm run cli -- scout run 48` — audit log should show Reddit results alongside HN.
+   ```powershell
+   npm run composio:reddit
+   ```
+
+   Opens a Composio Connect link → log into Reddit → approve. When status is `ACTIVE`, Signal Scout can read r/AI_Agents and r/LangChain.
+
+4. Check status any time:
+
+   ```powershell
+   npm run composio:status
+   ```
+
+**Verify:** `npm run cli -- scout run 48` — audit log should show Reddit results alongside HN (no `reddit.failed` entries).
 
 ---
 
@@ -233,15 +246,36 @@ Add the webhook wherever observal.io processes signups.
 
 ---
 
-## 7. Go live checklist
+## 7. Go live — automatic (no manual VM flip)
 
-Only after steps 1–5 are done and inboxes are ≥5 days into warmup:
+Set once in `.env` on the VM (or locally):
 
-1. `FULL_REVIEW_UNTIL=2026-06-30` in `.env` (every email gets human review until that date, 10% sampling after).
-2. Flip `DRY_RUN=false`.
-3. Engine is already on the GCP VM (`gtm-engine`, systemd). After `.env` changes: `sudo systemctl restart gtm-scheduler gtm-server caddy`.
-4. Watch `#gtm-daily` — the digest includes bounce/spam alarms that auto-pause sending at 3% bounce or 0.1% spam.
-5. Kill switch any time: `npm run cli -- pause all`.
+```
+AUTO_GO_LIVE=true
+FULL_REVIEW_UNTIL=2026-06-30
+DRY_RUN=true
+```
+
+Leave `DRY_RUN=true`. When **every active inbox** passes the warmup-only window (ramp day > 5), the engine automatically:
+
+1. Sets `CAMPAIGN_START` to today's date
+2. Ensures `FULL_REVIEW_UNTIL=2026-06-30` is in `.env`
+3. Flips live mode (`DRY_RUN=false` in `.env` + persisted in SQLite)
+4. Posts a `*GTM engine is LIVE*` message to `#gtm-daily`
+
+The check runs on scheduler startup, hourly, and after each warmup cycle — **no SSH, no `systemctl restart`, no manual env edits**.
+
+**Verify readiness:** `npm run cli -- go-live status`
+
+**Force the check now:** `npm run cli -- go-live check`
+
+**Verify live:** `curl https://gtm.useobserval.xyz/health` → `"dryRun": false` after go-live.
+
+Manual override still works: set `DRY_RUN=false` in `.env` anytime to go live early (not recommended before warmup completes).
+
+Watch `#gtm-daily` after go-live — bounce/spam alarms auto-pause sending at 3% bounce or 0.1% spam.
+
+Kill switch any time: `npm run cli -- pause all`.
 
 ---
 

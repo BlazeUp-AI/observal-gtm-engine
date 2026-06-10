@@ -2,6 +2,7 @@ import { sql, eq } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
+import { getCampaignStart, isDryRun } from '../../core/go-live.js';
 import { discordPost } from '../../core/discord.js';
 
 /**
@@ -56,8 +57,8 @@ export async function runScorecard() {
   }
 
   // --- Pace line ---
-  const campaignDay = campaignDayNumber();
-  let paceLine = '_Campaign not started (set CAMPAIGN_START=YYYY-MM-DD in .env)_';
+  const campaignDay = await campaignDayNumber();
+  let paceLine = '_Campaign not started — auto go-live will set CAMPAIGN_START when warmup completes_';
   if (campaignDay !== null && activated !== null) {
     const targets = Object.entries(config.paceLine).map(([d, t]) => [Number(d), t] as const);
     const nextTarget = targets.find(([d]) => d >= campaignDay) ?? targets[targets.length - 1];
@@ -73,7 +74,7 @@ export async function runScorecard() {
     `Pipeline: ${acc.n} accounts (${acc.hi ?? 0} qualified) · ${con.n} contacts (${con.verified ?? 0} verified, ${con.inSeq ?? 0} in sequence, ${con.replied ?? 0} replied)`,
     `Email: ${snd.n} sent · ${snd.bounced ?? 0} bounced · replies — ${replyBreakdown}`,
     ...alarms,
-    config.dryRun ? '_Engine is in DRY_RUN — no live sends._' : '',
+    ...(await isDryRun() ? ['_Engine is in DRY_RUN — no live sends._'] : []),
   ]
     .filter(Boolean)
     .join('\n');
@@ -94,11 +95,12 @@ function expectedToday(day: number): number {
   return points[points.length - 1][1];
 }
 
-function campaignDayNumber(): number | null {
-  const start = process.env.CAMPAIGN_START;
-  if (!start) return null;
-  const diff = Date.now() - new Date(`${start}T00:00:00`).getTime();
-  return diff < 0 ? null : Math.floor(diff / 86_400_000) + 1;
+function campaignDayNumber(): Promise<number | null> {
+  return getCampaignStart().then((start) => {
+    if (!start) return null;
+    const diff = Date.now() - new Date(`${start}T00:00:00`).getTime();
+    return diff < 0 ? null : Math.floor(diff / 86_400_000) + 1;
+  });
 }
 
 /** HogQL: workspaces (groups or distinct orgs) hitting the activation milestone. Adjust event names to the product's schema. */

@@ -1,7 +1,10 @@
 import 'dotenv/config';
 
+const DEFAULT_FULL_REVIEW_UNTIL = '2026-06-30';
+
 export const config = {
-  dryRun: process.env.DRY_RUN !== 'false', // live sending requires explicit DRY_RUN=false
+  dryRun: process.env.DRY_RUN !== 'false', // overridden at runtime by go-live.ts isDryRun()
+  autoGoLive: process.env.AUTO_GO_LIVE === 'true',
   databasePath: process.env.DATABASE_PATH ?? './gtm.db',
   port: Number(process.env.PORT ?? 3000),
 
@@ -53,7 +56,7 @@ export const config = {
     maxBounceRate: 0.03,
     maxSpamRate: 0.001,
     // Review gate: line-by-line approval before this date, 10% sampling after
-    fullReviewUntil: process.env.FULL_REVIEW_UNTIL ?? '', // YYYY-MM-DD; empty = always full review
+    fullReviewUntil: process.env.FULL_REVIEW_UNTIL ?? DEFAULT_FULL_REVIEW_UNTIL,
     samplingRate: 0.1,
     maxWords: 100,
   },

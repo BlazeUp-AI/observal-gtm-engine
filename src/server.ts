@@ -3,6 +3,7 @@ import { verifyKeyMiddleware, InteractionType, InteractionResponseType } from 'd
 import { buildDossier } from './agents/dossier-builder/index.js';
 import { draftCommunityReply } from './agents/copilot/index.js';
 import { config } from './core/config.js';
+import { isDryRun } from './core/go-live.js';
 
 const app = express();
 
@@ -57,7 +58,9 @@ if (config.discord.publicKey) {
 
 app.use(express.json());
 
-app.get('/health', (_req, res) => res.json({ ok: true, dryRun: config.dryRun }));
+app.get('/health', async (_req, res) => {
+  res.json({ ok: true, dryRun: await isDryRun(), autoGoLive: config.autoGoLive });
+});
 
 // Product signup webhook (from observal or a PostHog action webhook)
 app.post('/webhooks/signup', async (req, res) => {

@@ -2,6 +2,7 @@ import { and, eq, lte, isNull, or, sql } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
+import { isDryRun } from '../../core/go-live.js';
 import { variantForArchetype } from './variants.js';
 import { generateOpener, fullEmailQaPasses } from './personalize.js';
 import { sendEmail } from './send.js';
@@ -100,7 +101,7 @@ export async function processDueSequences(): Promise<{ sent: number; blocked: nu
     }
 
     // Guard 4: DRY_RUN — log the full planned send, mutate nothing.
-    if (config.dryRun) {
+    if (await isDryRun()) {
       await audit('outreach', 'send.dry_run', { to: contact.email, inbox: inbox.email, step: seq.step + 1, subject, words: body.split(/\s+/).length });
       blocked++;
       continue;
