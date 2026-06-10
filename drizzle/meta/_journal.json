@@ -15,6 +15,13 @@
       "when": 1781096000000,
       "tag": "0001_agentmail_provider_id",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1781096088448,
+      "tag": "0002_nostalgic_toad_men",
+      "breakpoints": true
     }
   ]
 }

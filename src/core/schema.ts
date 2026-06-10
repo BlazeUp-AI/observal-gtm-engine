@@ -54,6 +54,7 @@ export const sends = sqliteTable('sends', {
   step: integer('step').notNull(),
   inboxId: integer('inbox_id').notNull(),
   providerMessageId: text('provider_message_id'), // AgentMail message id
+
   subject: text('subject'),
   body: text('body'),
   approvedBy: text('approved_by'), // review-gate audit: human | sampling
@@ -70,6 +71,18 @@ export const replies = sqliteTable('replies', {
   suggestedDraft: text('suggested_draft'),
   receivedAt: integer('received_at').notNull().default(now),
   handled: integer('handled', { mode: 'boolean' }).notNull().default(false),
+});
+
+// Warmup traffic between our own inboxes (+ seed addresses) — builds sender
+// reputation before and during cold sending. Never touches a prospect.
+export const warmupSends = sqliteTable('warmup_sends', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  inboxEmail: text('inbox_email').notNull(),
+  toEmail: text('to_email').notNull(),
+  threadId: text('thread_id'),
+  subject: text('subject'),
+  isReply: integer('is_reply', { mode: 'boolean' }).notNull().default(false),
+  sentAt: integer('sent_at').notNull().default(now),
 });
 
 export const suppression = sqliteTable('suppression', {

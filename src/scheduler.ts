@@ -4,7 +4,9 @@ import { runOutreach } from './agents/outreach/index.js';
 import { runSignalScout } from './agents/signal-scout/index.js';
 import { runReplyTriager } from './agents/reply-triager/index.js';
 import { runScorecard } from './agents/scorecard/index.js';
+import { runWarmup } from './agents/warmup/index.js';
 import { config } from './core/config.js';
+import { db, schema } from './core/db.js';
 
 console.log(`gtm-engine scheduler starting (DRY_RUN=${config.dryRun})`);
 
@@ -14,6 +16,13 @@ cron.schedule('*/30 8-17 * * *', () => safe('outreach', runOutreach)); // every 
 cron.schedule('0 * * * *', () => safe('signal-scout', runSignalScout)); // hourly
 cron.schedule('*/5 * * * *', () => safe('reply-triager', runReplyTriager)); // every 5 min
 cron.schedule('0 8 * * *', () => safe('scorecard', runScorecard)); // daily 08:00
+cron.schedule('17 8-18/2 * * *', () => safe('warmup', runWarmup)); // every 2h in window (offset to avoid colliding with outreach)
+cron.schedule('0 0 * * *', () => safe('daily-reset', resetDailyCounters)); // midnight
+
+async function resetDailyCounters() {
+  await db.update(schema.inboxes).set({ sentToday: 0 });
+  console.log('[daily-reset] inbox sentToday counters reset');
+}
 
 async function safe(name: string, fn: () => Promise<void>) {
   try {

@@ -15,6 +15,7 @@ Brains: **Gemini** (via Vercel AI SDK). Email: **AgentMail** (API inboxes on col
 | Dossier Builder | signup webhook | built — pending Discord webhook |
 | Scorecard Reporter | daily 08:00 | built — PostHog wiring stubbed |
 | Drafting Copilot | Discord `/draft` | built — pending Discord app |
+| Warmup | every 2h, 08–18 | built — own-inbox + seed traffic only, runs even in DRY_RUN |
 
 ## Setup
 
@@ -39,3 +40,5 @@ npm run server                  # webhooks + slash commands (separate terminal)
 - The suppression table is checked in code before every send, by every sender path.
 - No code path posts to a community. The Copilot returns text for a human to post.
 - Ramp caps (10/day/inbox, +5/day, ceiling 40) live in `src/core/config.ts` — raising them is a decision, not an edit.
+- Inboxes younger than 5 days are warmup-only: the outreach engine will not pick them for cold sends.
+- The Warmup agent's recipient set is structurally limited to our own inboxes + `WARMUP_SEED_EMAILS` — a prospect address cannot enter that code path.

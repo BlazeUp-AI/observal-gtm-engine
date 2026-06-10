@@ -34,6 +34,13 @@ export async function runReplyTriager() {
   await audit('reply-triager', 'run.start');
   let processed = 0;
 
+  // Warmup traffic (our own inboxes + seed addresses) is the warmup agent's
+  // territory — skip WITHOUT marking read so it can reply and mark read itself.
+  const internalSenders = new Set([
+    ...inboxes.map((i) => i.email.toLowerCase()),
+    ...config.warmup.seedEmails.map((s) => s.toLowerCase()),
+  ]);
+
   for (const inbox of inboxes) {
     let messages;
     try {
@@ -47,6 +54,7 @@ export async function runReplyTriager() {
     for (const item of messages) {
       const fromEmail = extractEmail(item.from ?? '');
       if (!fromEmail) continue;
+      if (internalSenders.has(fromEmail)) continue; // warmup thread — not a prospect reply
 
       // The list endpoint returns previews — fetch the full message for the body.
       // extractedText is the reply minus quoted history, exactly what the classifier needs.

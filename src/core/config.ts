@@ -44,6 +44,8 @@ export const config = {
   outreach: {
     // Ramp: day N of an inbox's life -> daily cap. Playbook 9.4: 10/day start, +5/day, ceiling 40.
     rampCapForDay: (dayOfRamp: number) => Math.min(10 + Math.max(0, dayOfRamp - 1) * 5, 40),
+    // Inboxes younger than this send warmup traffic ONLY — no cold email.
+    warmupOnlyDays: 5,
     sendWindow: { startHour: 8, endHour: 17 }, // prospect-local
     minGapMinutes: 3,
     maxGapMinutes: 9,
@@ -54,6 +56,15 @@ export const config = {
     fullReviewUntil: process.env.FULL_REVIEW_UNTIL ?? '', // YYYY-MM-DD; empty = always full review
     samplingRate: 0.1,
     maxWords: 100,
+  },
+
+  warmup: {
+    // Daily warmup volume per inbox: starts small, grows with ramp day.
+    targetForDay: (dayOfRamp: number) => Math.min(2 + dayOfRamp, 8),
+    replyProbability: 0.45, // chance a warmup recipient replies (engagement signal)
+    // Extra external addresses to include in warmup rotation (comma-separated).
+    // Use personal Gmail/Outlook accounts you control and will open/reply from.
+    seedEmails: (process.env.WARMUP_SEED_EMAILS ?? '').split(',').map((s) => s.trim()).filter(Boolean),
   },
 
   paceLine: { 10: 50, 16: 130, 20: 200 } as Record<number, number>,

@@ -145,6 +145,7 @@ async function pickInbox() {
   const all = await db.query.inboxes.findMany({ where: eq(schema.inboxes.paused, false) });
   for (const inbox of all) {
     const rampDay = inbox.rampStartedAt ? Math.floor((Date.now() - inbox.rampStartedAt) / DAY) + 1 : 1;
+    if (rampDay <= config.outreach.warmupOnlyDays) continue; // warmup-only — no cold email yet
     const cap = Math.min(config.outreach.rampCapForDay(rampDay), inbox.dailyCap || Infinity);
     if (inbox.sentToday < cap) return inbox;
   }

@@ -147,9 +147,17 @@ npm run cli -- inbox add aryan@getobservable.xyz
 
 No per-inbox OAuth — sending and reply-polling go through the AgentMail API key.
 
-### 5d. Warm up (days 1–14)
+### 5d. Warm up (days 1–14) — automated
 
-Send 5–10 *manual, real* emails per inbox per day for the first week (to colleagues, friends, your own accounts — and reply to them). You can send manually via the AgentMail console or CLI. The engine's ramp caps handle the rest. Don't flip `DRY_RUN=false` before day ~5.
+The **Warmup agent** handles this: every 2 hours it exchanges short, Gemini-written, human-looking threads between your own inboxes (and any `WARMUP_SEED_EMAILS` you add), replies to ~45% of them, and marks them read — the engagement pattern mailbox providers want to see from a trustworthy sender. Volume auto-scales with each inbox's age (3/day on day 1 up to 8/day).
+
+Hard safety rails:
+
+- Warmup recipients are structurally limited to your own inboxes + the seed allowlist — no prospect can ever receive warmup mail.
+- Inboxes under 5 days old are **warmup-only**: the Outreach Engine refuses to pick them for cold email.
+- Add 1–2 personal Gmail/Outlook addresses to `WARMUP_SEED_EMAILS` in `.env` and occasionally open/reply/"not spam" from them — engagement from major providers is the strongest signal.
+
+Boost (optional but recommended): manually send a few real emails from each inbox in week 1 via the AgentMail console. Don't flip `DRY_RUN=false` before day ~5.
 
 ---
 
