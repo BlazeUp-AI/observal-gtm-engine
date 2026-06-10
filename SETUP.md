@@ -244,6 +244,26 @@ Option B — PostHog Workflow: trigger on `user_signed_up` → HTTP POST action 
 
 Add the webhook wherever observal.io processes signups.
 
+### 6d. Google Sheets scorecard (Composio)
+
+**Sheet:** [Observal GTM Scorecard](https://docs.google.com/spreadsheets/d/1khilsBPv1RVBxYyu5AE5HI_0toF2V-po97xHxHT86l4/edit)
+
+The Scorecard agent appends one row per day to **Daily Scorecard** (metrics aligned with the PostHog dashboard) and streams individual events to **Outcomes** (signups, sends, replies, intent signals).
+
+1. Share the sheet with the Google account you'll use for Composio (**Editor** access).
+2. Create two tabs named **Daily Scorecard** and **Outcomes** (if missing).
+3. Connect Google Sheets:
+
+   ```powershell
+   npm run composio:sheets
+   ```
+
+4. `.env` defaults already point at this sheet (`GOOGLE_SHEETS_ID=...`).
+
+**Verify:** `npm run cli -- report now` — header row + today's metrics appear in the sheet.
+
+**PostHog dashboard:** [Observal GTM — 20-Day Playbook](https://us.posthog.com/project/464332/dashboard/1694728) links to the same sheet in its header tile.
+
 ---
 
 ## 7. Go live — automatic (no manual VM flip)

@@ -3,6 +3,7 @@ import { eq, isNull, and } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
+import { appendOutcomeRow } from '../../core/sheets.js';
 import { getAgentMail } from '../../core/agentmail.js';
 import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
@@ -105,6 +106,15 @@ export async function runReplyTriager() {
         config.discord.replies,
         `*${out.classification.toUpperCase()}* from ${item.from} (inbox: ${inbox.email})\n> ${out.summary}\n\n*Suggested draft:*\n${out.suggestedDraft || '_none_'}\n\n_Reply manually from ${inbox.email} — the triager never sends._`,
       ).catch(() => {});
+
+      void appendOutcomeRow({
+        timestamp: new Date().toISOString(),
+        outcome_type: `reply_${out.classification}`,
+        summary: out.summary,
+        entity: fromEmail,
+        url: '',
+        source: inbox.email,
+      }).catch(() => {});
 
       processed++;
     }

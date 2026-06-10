@@ -30,6 +30,12 @@ export const config = {
     host: process.env.POSTHOG_HOST ?? 'https://us.posthog.com',
   },
 
+  sheets: {
+    spreadsheetId: process.env.GOOGLE_SHEETS_ID ?? '1khilsBPv1RVBxYyu5AE5HI_0toF2V-po97xHxHT86l4',
+    scorecardTab: process.env.GOOGLE_SHEETS_SCORECARD_TAB ?? 'Daily Scorecard',
+    outcomesTab: process.env.GOOGLE_SHEETS_OUTCOMES_TAB ?? 'Outcomes',
+  },
+
   reacherUrl: process.env.REACHER_URL ?? 'http://localhost:8080',
 
   discord: {

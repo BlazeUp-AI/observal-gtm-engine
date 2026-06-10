@@ -15,7 +15,7 @@ export function getComposio(): Composio<VercelProvider> | null {
   _composio ??= new Composio({
     apiKey: config.composio.apiKey,
     provider: new VercelProvider(),
-    toolkitVersions: { reddit: '00000000_00' },
+    toolkitVersions: { reddit: '00000000_00', googlesheets: '00000000_00' },
   });
   return _composio;
 }

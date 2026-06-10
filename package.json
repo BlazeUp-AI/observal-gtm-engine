@@ -13,7 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "composio:status": "tsx scripts/setup-composio.ts status",
-    "composio:reddit": "tsx scripts/setup-composio.ts reddit"
+    "composio:reddit": "tsx scripts/setup-composio.ts reddit",
+    "composio:sheets": "tsx scripts/setup-composio.ts sheets"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.0",

@@ -95,6 +95,16 @@ export async function runSignalScout(hoursBack = 24) {
     await db.insert(schema.intentFeed).values({ source: hit.source, url: hit.url, author: hit.author, snippet: hit.snippet, relevanceScore: relevance, postedAt: hit.postedAt }).onConflictDoNothing();
     stored++;
     await discordPost(config.discord.signals, `*Intent signal (${relevance})* — ${hit.source} u/${hit.author}\n> ${hit.snippet.slice(0, 250)}\n${hit.url}\n_${why}_ · reply personally, today.`).catch(() => {});
+    void import('../../core/sheets.js').then(({ appendOutcomeRow }) =>
+      appendOutcomeRow({
+        timestamp: new Date().toISOString(),
+        outcome_type: 'intent_signal',
+        summary: hit.snippet.slice(0, 200),
+        entity: hit.author,
+        url: hit.url,
+        source: hit.source,
+      }),
+    ).catch(() => {});
   }
 
   await audit('signal-scout', 'run.end', { scanned: found.length, stored });

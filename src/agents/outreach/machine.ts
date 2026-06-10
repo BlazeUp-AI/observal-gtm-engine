@@ -3,6 +3,7 @@ import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
 import { isDryRun } from '../../core/go-live.js';
+import { appendOutcomeRow } from '../../core/sheets.js';
 import { variantForArchetype } from './variants.js';
 import { generateOpener, fullEmailQaPasses } from './personalize.js';
 import { sendEmail } from './send.js';
@@ -132,6 +133,14 @@ export async function processDueSequences(): Promise<{ sent: number; blocked: nu
     await db.update(schema.contacts).set({ status: 'in_sequence' }).where(eq(schema.contacts.id, contact.id));
     await db.update(schema.inboxes).set({ sentToday: sql`${schema.inboxes.sentToday} + 1` }).where(eq(schema.inboxes.id, inbox.id));
     await audit('outreach', 'send.sent', { to: contact.email, inbox: inbox.email, step: nextStep });
+    void appendOutcomeRow({
+      timestamp: new Date().toISOString(),
+      outcome_type: 'email_sent',
+      summary: `Step ${nextStep}: ${subject}`,
+      entity: contact.email,
+      url: '',
+      source: inbox.email,
+    }).catch(() => {});
     sent++;
 
     // Randomized human-ish gap between sends (3-9 min) — playbook §9.4.

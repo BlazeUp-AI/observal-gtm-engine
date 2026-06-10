@@ -35,7 +35,8 @@ npm run server                  # webhooks + slash commands (separate terminal)
 
 ## Safety rails (non-negotiable)
 
-- `DRY_RUN=true` is the default. Live sending requires `DRY_RUN=false` **and** unpaused inboxes.
+- `DRY_RUN=true` is the default. With `AUTO_GO_LIVE=true`, the engine flips live automatically once every active inbox passes the 5-day warmup window — no manual SSH.
+- Manual early go-live: set `DRY_RUN=false` in `.env` (not recommended before warmup completes).
 - `npm run cli -- pause all` is the global kill switch.
 - The suppression table is checked in code before every send, by every sender path.
 - No code path posts to a community. The Copilot returns text for a human to post.
