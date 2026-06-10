@@ -107,7 +107,7 @@ Without Reacher, contacts stay `unverified` and the Outreach Engine refuses to s
 
 ## 5. Cold-email domains + inboxes via AgentMail (~30 min + 14-day warmup clock)
 
-This is the longest-lead-time item — start it first in real life. **Never send cold email from observal.io itself.** Lookalike domains in hand (e.g. `useobserval.xyz`, `joinobserval.xyz`, `tryobserval.xyz`, `getobserval.xyz` on Porkbun).
+This is the longest-lead-time item — start it first in real life. **Never send cold email from observal.io itself.** Lookalike domains in hand (e.g. `useobserval.xyz`, `joinobserval.xyz`, `tryobserval.xyz`, `getobservable.xyz` on Porkbun).
 
 > Note: `.xyz` TLDs carry a deliverability handicap (spam filters distrust the cheapest TLDs). Authenticate properly, warm up slowly, and watch the bounce/spam alarms. If inbox placement disappoints, add a `.com`/`.io` lookalike.
 
@@ -142,7 +142,7 @@ One command per inbox — this creates the inbox in AgentMail **and** starts its
 npm run cli -- inbox add aryan@useobserval.xyz
 npm run cli -- inbox add aryan@joinobserval.xyz
 npm run cli -- inbox add aryan@tryobserval.xyz
-npm run cli -- inbox add aryan@getobserval.xyz
+npm run cli -- inbox add aryan@getobservable.xyz
 ```
 
 No per-inbox OAuth — sending and reply-polling go through the AgentMail API key.
