@@ -1,0 +1,12 @@
+services:
+  reacher:
+    image: reacherhq/backend:latest
+    container_name: gtm-reacher
+    ports:
+      - "8080:8080"
+    environment:
+      - RUST_LOG=info
+      # SMTP verification needs outbound port 25; many residential ISPs and some
+      # VPS providers block it. If verification returns 'unknown' for everything,
+      # set a proxy or run Reacher on a host with port 25 open (see Reacher docs).
+    restart: unless-stopped

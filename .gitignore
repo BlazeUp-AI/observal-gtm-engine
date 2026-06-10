@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+gtm.db
+gtm.db-*
+*.log
+services/jobspy/.venv/
+__pycache__/
