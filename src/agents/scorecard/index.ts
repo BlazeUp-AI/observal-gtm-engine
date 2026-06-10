@@ -104,11 +104,14 @@ function campaignDayNumber(): number | null {
 /** HogQL: workspaces (groups or distinct orgs) hitting the activation milestone. Adjust event names to the product's schema. */
 async function fetchActivatedWorkspaces(): Promise<number> {
   const query = `
-    select count(distinct properties.workspace_id)
-    from events
-    where event = 'agent_registered'
-    group by properties.workspace_id
-    having count(distinct properties.agent_id) >= 3
+    select count() as activated from (
+      select properties.workspace_id as ws
+      from events
+      where event = 'agent_registered'
+        and notEmpty(toString(properties.workspace_id))
+      group by ws
+      having countDistinct(toString(properties.agent_id)) >= 3
+    )
   `;
   const res = await fetch(`${config.posthog.host}/api/projects/${config.posthog.projectId}/query/`, {
     method: 'POST',
@@ -116,6 +119,7 @@ async function fetchActivatedWorkspaces(): Promise<number> {
     body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
   });
   if (!res.ok) throw new Error(`PostHog ${res.status}`);
-  const data = (await res.json()) as { results?: unknown[] };
-  return data.results?.length ?? 0;
+  const data = (await res.json()) as { results?: unknown[][] };
+  const activated = data.results?.[0]?.[0];
+  return typeof activated === 'number' ? activated : Number(activated ?? 0);
 }

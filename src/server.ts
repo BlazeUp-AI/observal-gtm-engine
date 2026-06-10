@@ -8,10 +8,10 @@ const app = express();
 
 // Discord interactions need the raw body for ed25519 verification —
 // this route MUST be registered before express.json().
-app.post(
-  '/discord/interactions',
-  verifyKeyMiddleware(config.discord.publicKey),
-  (req, res) => {
+const discordInteractionHandler: express.RequestHandler = (req, res) => {
+  if (!config.discord.publicKey || !config.discord.appId) {
+    return res.status(503).json({ error: 'Discord app not configured (set DISCORD_PUBLIC_KEY + DISCORD_APP_ID)' });
+  }
     const interaction = req.body;
 
     if (interaction.type === InteractionType.PING) {
@@ -47,8 +47,13 @@ app.post(
     }
 
     return res.status(400).json({ error: 'unhandled interaction' });
-  },
-);
+};
+
+if (config.discord.publicKey) {
+  app.post('/discord/interactions', verifyKeyMiddleware(config.discord.publicKey), discordInteractionHandler);
+} else {
+  console.warn('[server] DISCORD_PUBLIC_KEY unset — /discord/interactions disabled until configured');
+}
 
 app.use(express.json());
 

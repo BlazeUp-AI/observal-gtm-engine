@@ -74,7 +74,23 @@ Needs the server publicly reachable (do this once deployed on the VPS):
 2. From **General Information** copy **Application ID** and **Public Key** into `.env` (`DISCORD_APP_ID`, `DISCORD_PUBLIC_KEY`).
 3. **Bot** tab → **Reset Token** → copy into `.env` as `DISCORD_BOT_TOKEN`.
 4. Register the command: `node scripts/register-discord-commands.cjs`
-5. **General Information** → set **Interactions Endpoint URL** to `https://<your-server>/discord/interactions` (the server must be running — Discord sends a verification ping).
+5. **General Information** → set **Interactions Endpoint URL** to:
+
+   ```
+   https://gtm.useobserval.xyz/discord/interactions
+   ```
+
+   Discord requires **HTTPS** (plain `http://` is rejected). Caddy on the GCP VM terminates TLS automatically once DNS is live.
+
+6. **DNS (Porkbun)** — add an A record on `useobserval.xyz`:
+
+   | Host | Type | Answer |
+   |------|------|--------|
+   | `gtm` | A | `104.197.53.207` |
+
+   Wait 2–10 min for propagation, then on the VM: `sudo systemctl restart caddy`. Caddy will fetch a Let's Encrypt cert and HTTPS will work.
+
+7. Verify: `curl https://gtm.useobserval.xyz/health` → `{"ok":true,...}` then save the Interactions URL in Discord (verification ping succeeds).
 6. Invite the app to your server: **Installation** → Guild Install link (no extra permissions needed; the command replies ephemerally).
 
 ---
@@ -161,44 +177,69 @@ Boost (optional but recommended): manually send a few real emails from each inbo
 
 ---
 
-## 6. PostHog (optional, 10 min) — activation metrics in the daily digest
+## 6. PostHog — activation metrics + GTM dashboard
 
-1. PostHog → Settings → **Personal API key** (read scope on your project).
+**Project:** [Observal](https://us.posthog.com/project/464332) (org: **Observal**, id `464332`)  
+**Dashboard:** [Observal GTM — 20-Day Playbook](https://us.posthog.com/project/464332/dashboard/1694728)
+
+### 6a. gtm-engine daily digest (Scorecard agent)
+
+1. PostHog → Settings → **Personal API keys** → Create key with **Query read** scope.
 2. `.env`:
    ```
    POSTHOG_API_KEY=phx_...
-   POSTHOG_PROJECT_ID=12345
+   POSTHOG_PROJECT_ID=464332
    POSTHOG_HOST=https://us.posthog.com
    ```
+3. Restart scheduler on the VM after updating.
+
+The Scorecard agent queries activated workspaces (3+ distinct `agent_id` per `workspace_id` on `agent_registered`).
+
+### 6b. observal.io product SDK (required for dashboard data)
+
+Install PostHog in the observal app and capture these events:
+
+| Event | When | Required properties |
+|---|---|---|
+| `user_signed_up` | Account created | `utm_source`, `utm_medium`, `utm_campaign`, `email` (hashed ok) |
+| `agent_registered` | Agent saved to registry | `workspace_id`, `agent_id`, `agent_type` |
+| `insights_viewed` | User opens fleet Insights | `workspace_id` |
+| `invite_sent` | Teammate invite sent | `workspace_id`, `invite_channel` |
+| `invite_accepted` | Invite accepted | `workspace_id` |
+
+```javascript
+posthog.init('phc_o4YHrfXkTxa67mMvGUCBa3C4bwGTDsUTcPuGME8MmLgT', {
+  api_host: 'https://us.i.posthog.com',
+});
+
+posthog.capture('user_signed_up', { utm_source: 'outreach', utm_medium: 'email' });
+posthog.capture('agent_registered', { workspace_id, agent_id, agent_type: 'support' });
+```
+
+Lifecycle cohorts (for re-engagement emails) are pre-created in PostHog — they populate once events flow.
+
+### 6c. Signup → Dossier Builder webhook
+
+Option A — direct from your backend on signup:
+
+```
+POST https://gtm.useobserval.xyz/webhooks/signup
+{ "email": "new.user@company.com", "name": "New User", "company": "Acme" }
+```
+
+Option B — PostHog Workflow: trigger on `user_signed_up` → HTTP POST action to the URL above (same JSON body from event properties).
+
+Add the webhook wherever observal.io processes signups.
 
 ---
 
-## 7. Signup webhook — unlocks the Dossier Builder
-
-Point your product's signup event at the engine:
-
-```
-POST http://<your-server>:3000/webhooks/signup
-Content-Type: application/json
-
-{ "email": "new.user@company.com", "name": "New User" }
-```
-
-Add it wherever observal.io processes signups (backend hook, or a PostHog/Zapier-style webhook on the signup event).
-
----
-
-## 8. Go live checklist
+## 7. Go live checklist
 
 Only after steps 1–5 are done and inboxes are ≥5 days into warmup:
 
 1. `FULL_REVIEW_UNTIL=2026-06-30` in `.env` (every email gets human review until that date, 10% sampling after).
 2. Flip `DRY_RUN=false`.
-3. Start the engine on the VPS:
-   ```powershell
-   npm run dev      # scheduler (all 7 agents on cron)
-   npm run server   # webhooks + /draft (second process)
-   ```
+3. Engine is already on the GCP VM (`gtm-engine`, systemd). After `.env` changes: `sudo systemctl restart gtm-scheduler gtm-server caddy`.
 4. Watch `#gtm-daily` — the digest includes bounce/spam alarms that auto-pause sending at 3% bounce or 0.1% spam.
 5. Kill switch any time: `npm run cli -- pause all`.
 

@@ -1,0 +1,5 @@
+# HTTPS reverse proxy for gtm-engine (Discord requires https:// for interactions).
+# DNS: A record gtm.useobserval.xyz -> VM external IP
+gtm.useobserval.xyz {
+	reverse_proxy localhost:3000
+}
