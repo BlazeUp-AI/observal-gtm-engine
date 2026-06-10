@@ -3,7 +3,7 @@ import { eq, isNull, and } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { appendOutcomeRow } from '../../core/sheets.js';
+import { appendOutcomeRow, defaultOutcomeMeta } from '../../core/sheets.js';
 import { getAgentMail } from '../../core/agentmail.js';
 import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
@@ -107,11 +107,16 @@ export async function runReplyTriager() {
         `*${out.classification.toUpperCase()}* from ${item.from} (inbox: ${inbox.email})\n> ${out.summary}\n\n*Suggested draft:*\n${out.suggestedDraft || '_none_'}\n\n_Reply manually from ${inbox.email} — the triager never sends._`,
       ).catch(() => {});
 
+      const account = contact ? await db.query.accounts.findFirst({ where: eq(schema.accounts.id, contact.accountId) }) : null;
+      const meta = await defaultOutcomeMeta();
       void appendOutcomeRow({
+        ...meta,
         timestamp: new Date().toISOString(),
         outcome_type: `reply_${out.classification}`,
         summary: out.summary,
         entity: fromEmail,
+        company: account?.name ?? '',
+        channel: 'email',
         url: '',
         source: inbox.email,
       }).catch(() => {});

@@ -38,6 +38,13 @@ export async function getCampaignStart(): Promise<string | null> {
   return (await getSetting('campaign_start')) ?? process.env.CAMPAIGN_START ?? null;
 }
 
+export async function campaignDayNumber(): Promise<number | null> {
+  const start = await getCampaignStart();
+  if (!start) return null;
+  const diff = Date.now() - new Date(`${start}T00:00:00`).getTime();
+  return diff < 0 ? null : Math.floor(diff / DAY) + 1;
+}
+
 export async function getFullReviewUntil(): Promise<string> {
   return process.env.FULL_REVIEW_UNTIL || (await getSetting('full_review_until')) || DEFAULT_FULL_REVIEW_UNTIL;
 }

@@ -262,6 +262,26 @@ The Scorecard agent appends one row per day to **Daily Scorecard** (metrics alig
 
 **Verify:** `npm run cli -- report now` — header row + today's metrics appear in the sheet.
 
+**Schema version:** `SHEETS_SCHEMA_VERSION=3` in `src/core/sheets.ts`. When bumped, row 1 on both tabs is rewritten on the next sync.
+
+#### Daily Scorecard columns (54)
+
+| Group | Columns |
+| --- | --- |
+| Meta | `date`, `campaign_day`, `days_remaining`, `engine_mode` |
+| Pace | `activated_total`, `activated_today`, `pace_target`, `gap_to_pace`, `on_pace`, `next_milestone_day`, `next_milestone_target` |
+| Product | `signups_today/cumulative`, `signups_email/community/content/invite/organic_today`, `agents_registered_today`, `insights_viewed_today` |
+| Viral loop | `invites_sent/accepted_today`, `invites_sent/accepted_cumulative`, `invite_accept_rate_pct`, `k_factor` |
+| Pipeline | `accounts_total/qualified`, `contacts_total/verified/queued/in_sequence/replied/activated` |
+| Email | `emails_sent_today/total`, `emails_bounced`, `bounce_rate_pct`, `replies_today/total`, `replies_positive/question/objection/ooo/unsubscribe`, `positive_reply_rate_pct` |
+| Community | `intent_signals_today/cumulative`, `intent_signals_hn/reddit_today` |
+| Deliverability | `inboxes_active`, `inboxes_paused` |
+| Links | `posthog_dashboard`, `scorecard_sheet` |
+
+#### Outcomes columns (12)
+
+`timestamp`, `date`, `campaign_day`, `outcome_type`, `summary`, `entity`, `company`, `channel`, `url`, `source`, `relevance_score`, `engine_mode`
+
 **PostHog dashboard:** [Observal GTM — 20-Day Playbook](https://us.posthog.com/project/464332/dashboard/1694728) links to the same sheet in its header tile.
 
 ---

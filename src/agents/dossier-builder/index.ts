@@ -5,7 +5,7 @@ import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
 import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
-import { appendOutcomeRow } from '../../core/sheets.js';
+import { appendOutcomeRow, defaultOutcomeMeta } from '../../core/sheets.js';
 
 const CAL_LINK = process.env.CAL_LINK ?? 'https://cal.com/observal/concierge';
 
@@ -64,12 +64,16 @@ export async function buildDossier(signup: { email: string; name?: string; compa
   }
   await audit('dossier-builder', 'dossier.posted', { email: signup.email, matched: Boolean(knownAccount) });
 
+  const meta = await defaultOutcomeMeta();
   void appendOutcomeRow({
+    ...meta,
     timestamp: new Date().toISOString(),
     outcome_type: 'signup',
     summary: `${signup.name ?? signup.email}${knownAccount ? ` · ${knownAccount.name}` : ''}`,
     entity: signup.email,
-    url: '',
+    company: signup.company ?? knownAccount?.name ?? '',
+    channel: knownContact ? 'email' : knownAccount ? 'known_account' : 'organic',
+    url: knownContact?.signalUrl ?? '',
     source: knownContact ? 'outreach' : knownAccount ? 'known_account' : 'organic',
   }).catch(() => {});
 }
