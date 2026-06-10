@@ -1,0 +1,17 @@
+[Unit]
+Description=gtm-engine server (signup webhook + Discord /draft)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gtm-engine
+ExecStart=/usr/bin/npx tsx src/server.ts
+Restart=always
+RestartSec=10
+User=gtm
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=256
+
+[Install]
+WantedBy=multi-user.target

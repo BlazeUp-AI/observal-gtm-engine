@@ -1,0 +1,18 @@
+[Unit]
+Description=gtm-engine scheduler (all agent cron jobs)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/gtm-engine
+ExecStart=/usr/bin/npx tsx src/scheduler.ts
+Restart=always
+RestartSec=10
+User=gtm
+Environment=NODE_ENV=production
+# 1GB-RAM friendly
+Environment=NODE_OPTIONS=--max-old-space-size=384
+
+[Install]
+WantedBy=multi-user.target

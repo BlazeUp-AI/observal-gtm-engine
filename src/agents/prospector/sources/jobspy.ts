@@ -6,7 +6,8 @@ import type { RawLead } from '../types.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const SIDECAR_DIR = join(here, '..', '..', '..', '..', 'services', 'jobspy');
-const VENV_PY = join(SIDECAR_DIR, '.venv', 'Scripts', 'python.exe');
+const VENV_PY_WIN = join(SIDECAR_DIR, '.venv', 'Scripts', 'python.exe');
+const VENV_PY_NIX = join(SIDECAR_DIR, '.venv', 'bin', 'python');
 
 /**
  * JobSpy sidecar — job-board hiring signals (playbook §9.3 A1 source 1).
@@ -14,7 +15,7 @@ const VENV_PY = join(SIDECAR_DIR, '.venv', 'Scripts', 'python.exe');
  * Returns [] with a console note when the sidecar isn't set up — never blocks the run.
  */
 export async function fetchJobspyLeads(): Promise<RawLead[]> {
-  const python = existsSync(VENV_PY) ? VENV_PY : 'python';
+  const python = existsSync(VENV_PY_WIN) ? VENV_PY_WIN : existsSync(VENV_PY_NIX) ? VENV_PY_NIX : 'python3';
 
   return new Promise((resolve) => {
     const leads: RawLead[] = [];
