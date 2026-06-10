@@ -59,7 +59,7 @@ async function main() {
       const [username, domain] = email.split('@');
       const agentmail = getAgentMail();
       if (agentmail) {
-        const inbox = await agentmail.inboxes.create({ username, domain, clientId: `gtm-${email}` });
+        const inbox = await agentmail.inboxes.create({ username, domain, clientId: `gtm-${username}-${domain}`.replace(/[^A-Za-z0-9._~-]/g, '-') });
         console.log(`AgentMail inbox provisioned: ${inbox.inboxId}`);
       } else {
         console.log('No AGENTMAIL_API_KEY — registered locally only; provision in AgentMail later.');
