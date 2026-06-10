@@ -25,11 +25,16 @@ export const config = {
 
   reacherUrl: process.env.REACHER_URL ?? 'http://localhost:8080',
 
-  slack: {
-    signals: process.env.SLACK_CHANNEL_SIGNALS ?? '',
-    replies: process.env.SLACK_CHANNEL_REPLIES ?? '',
-    newSignups: process.env.SLACK_CHANNEL_NEW_SIGNUPS ?? '',
-    gtmDaily: process.env.SLACK_CHANNEL_GTM_DAILY ?? '',
+  discord: {
+    // One channel webhook URL per agent surface (channel settings -> Integrations -> Webhooks)
+    signals: process.env.DISCORD_WEBHOOK_SIGNALS ?? '',
+    replies: process.env.DISCORD_WEBHOOK_REPLIES ?? '',
+    newSignups: process.env.DISCORD_WEBHOOK_NEW_SIGNUPS ?? '',
+    gtmDaily: process.env.DISCORD_WEBHOOK_GTM_DAILY ?? '',
+    // Slash-command app (/draft): https://discord.com/developers/applications
+    appId: process.env.DISCORD_APP_ID ?? '',
+    publicKey: process.env.DISCORD_PUBLIC_KEY ?? '',
+    botToken: process.env.DISCORD_BOT_TOKEN ?? '', // only used by scripts/register-discord-commands.cjs
   },
 
   outreach: {

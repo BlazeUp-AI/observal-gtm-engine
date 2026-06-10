@@ -2,7 +2,7 @@ import { sql, eq } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { slackPost } from '../../core/composio.js';
+import { discordPost } from '../../core/discord.js';
 
 /**
  * Scorecard Reporter — daily 08:00. Playbook §9.8 F1 + §8.
@@ -79,7 +79,7 @@ export async function runScorecard() {
     .join('\n');
 
   console.log(digest.replace(/\*/g, ''));
-  await slackPost(config.slack.gtmDaily, digest).catch(() => {});
+  await discordPost(config.discord.gtmDaily, digest).catch(() => {});
   await audit('scorecard', 'run.end', { accounts: acc.n, contacts: con.n, sends: snd.n, alarms: alarms.length });
 }
 

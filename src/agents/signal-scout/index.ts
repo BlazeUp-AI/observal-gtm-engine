@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { getComposio, ENTITY, slackPost } from '../../core/composio.js';
+import { getComposio, ENTITY } from '../../core/composio.js';
+import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
 
 const relevanceSchema = z.object({
@@ -86,7 +87,7 @@ export async function runSignalScout(hoursBack = 24) {
 
     await db.insert(schema.intentFeed).values({ source: hit.source, url: hit.url, author: hit.author, snippet: hit.snippet, relevanceScore: relevance, postedAt: hit.postedAt }).onConflictDoNothing();
     stored++;
-    await slackPost(config.slack.signals, `*Intent signal (${relevance})* — ${hit.source} u/${hit.author}\n> ${hit.snippet.slice(0, 250)}\n${hit.url}\n_${why}_ · reply personally, today.`).catch(() => {});
+    await discordPost(config.discord.signals, `*Intent signal (${relevance})* — ${hit.source} u/${hit.author}\n> ${hit.snippet.slice(0, 250)}\n${hit.url}\n_${why}_ · reply personally, today.`).catch(() => {});
   }
 
   await audit('signal-scout', 'run.end', { scanned: found.length, stored });

@@ -38,11 +38,11 @@ COMPOSIO_API_KEY=...      # you already have this
 
 ---
 
-## 2. Slack workspace + channels (20 min) — unlocks all agent notifications
+## 2. Discord server + channels (15 min) — unlocks all agent notifications
 
 ### 2a. Create the channels
 
-In your Slack workspace create four channels:
+In your Discord server create four text channels:
 
 | Channel | Used by |
 |---|---|
@@ -51,30 +51,31 @@ In your Slack workspace create four channels:
 | `#gtm-new-signups` | Dossier Builder posts a dossier when someone signs up |
 | `#gtm-daily` | Scorecard Reporter posts the daily digest at 08:00 |
 
-### 2b. Get each channel's ID
+### 2b. Create a webhook per channel
 
-Right-click channel → **View channel details** → scroll to bottom → copy the ID (looks like `C0123ABC456`). Put them in `.env`:
+For each channel: gear icon (**Edit Channel**) → **Integrations** → **Webhooks** → **New Webhook** → name it `gtm-engine` → **Copy Webhook URL**. Put the four URLs in `.env`:
 
 ```
-SLACK_CHANNEL_SIGNALS=C...
-SLACK_CHANNEL_REPLIES=C...
-SLACK_CHANNEL_NEW_SIGNUPS=C...
-SLACK_CHANNEL_GTM_DAILY=C...
+DISCORD_WEBHOOK_SIGNALS=https://discord.com/api/webhooks/...
+DISCORD_WEBHOOK_REPLIES=https://discord.com/api/webhooks/...
+DISCORD_WEBHOOK_NEW_SIGNUPS=https://discord.com/api/webhooks/...
+DISCORD_WEBHOOK_GTM_DAILY=https://discord.com/api/webhooks/...
 ```
 
-### 2c. Connect Slack in Composio
-
-1. Go to https://app.composio.dev → **Apps** → search **Slack** → **Connect**.
-2. Authorize it into your workspace. When asked for an entity/user id, use **`gtm-engine`** (the code calls Composio with `userId: 'gtm-engine'` for all system actions).
-3. Invite the bot to all four channels: in each channel type `/invite @<botname>`.
+That's it for notifications — webhooks need no bot, no OAuth, no Composio.
 
 **Verify:** `npm run cli -- report now` — the daily digest should appear in `#gtm-daily`.
 
-### 2d. (Optional, for the Drafting Copilot) Slack slash command
+### 2c. (Optional, for the Drafting Copilot) `/draft` slash command
 
-1. https://api.slack.com/apps → **Create New App** → from scratch.
-2. **Slash Commands** → create `/draft`, request URL: `http://<your-server>:3000/slack/draft` (needs the server reachable from the internet — do this once deployed on the VPS).
-3. Install the app to your workspace.
+Needs the server publicly reachable (do this once deployed on the VPS):
+
+1. https://discord.com/developers/applications → **New Application** → name it `gtm-copilot`.
+2. From **General Information** copy **Application ID** and **Public Key** into `.env` (`DISCORD_APP_ID`, `DISCORD_PUBLIC_KEY`).
+3. **Bot** tab → **Reset Token** → copy into `.env` as `DISCORD_BOT_TOKEN`.
+4. Register the command: `node scripts/register-discord-commands.cjs`
+5. **General Information** → set **Interactions Endpoint URL** to `https://<your-server>/discord/interactions` (the server must be running — Discord sends a verification ping).
+6. Invite the app to your server: **Installation** → Guild Install link (no extra permissions needed; the command replies ephemerally).
 
 ---
 
@@ -193,7 +194,7 @@ Only after steps 1–5 are done and inboxes are ≥5 days into warmup:
 |---|---|---|
 | 1 | 5a+5b: buy domains, create inboxes, DNS | 14-day warmup clock starts ticking |
 | 1 | Step 1: GitHub token | 5 minutes, unlocks contact discovery |
-| 2 | Step 2: Slack channels + Composio Slack | makes all agents visible |
+| 2 | Step 2: Discord channels + webhooks | makes all agents visible |
 | 2 | Step 4: Reacher | unlocks email verification |
 | 3 | Step 3: Composio Reddit | unlocks full Signal Scout |
 | 3 | 5c+5d: connect + register inboxes | engine starts dry-run planning real sends |

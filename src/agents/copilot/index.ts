@@ -3,7 +3,7 @@ import { audit } from '../../core/audit.js';
 import { complete } from '../../core/llm.js';
 
 /**
- * Drafting Copilot — Slack `/draft`. Playbook §9.5 C2.
+ * Drafting Copilot — Discord `/draft`. Playbook §9.5 C2.
  * Give-first community drafts in our voice. Returns text only — there is
  * intentionally no code path that posts to a community.
  */

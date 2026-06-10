@@ -3,8 +3,9 @@ import { VercelProvider } from '@composio/vercel';
 import { config } from './config.js';
 
 /**
- * Composio is the auth + execution layer for every external tool:
- * Gmail (send/read), Slack (post), Reddit/X/GitHub (search), Google Sheets (views).
+ * Composio is the auth + execution layer for external tools that need OAuth:
+ * Gmail (send/read), Reddit/X/GitHub (search), Google Sheets (views).
+ * Discord notifications bypass Composio entirely — see core/discord.ts (plain webhooks).
  * One user id per logical identity; outreach inboxes each get their own connected account.
  */
 let _composio: Composio<VercelProvider> | null = null;
@@ -20,19 +21,6 @@ export function getComposio(): Composio<VercelProvider> | null {
 }
 
 export const ENTITY = {
-  system: 'gtm-engine', // Slack, Sheets, GitHub, Reddit, X
+  system: 'gtm-engine', // Sheets, GitHub, Reddit, X
   inbox: (email: string) => `inbox:${email}`, // per-inbox Gmail connections
 };
-
-/** Post a message to a Slack channel via Composio's Slack tool. */
-export async function slackPost(channel: string, text: string) {
-  const composio = getComposio();
-  if (!composio || !channel) {
-    console.log(`[slack:skipped — ${!composio ? 'no COMPOSIO_API_KEY' : 'no channel configured'}] ${text.slice(0, 200)}`);
-    return;
-  }
-  await composio.tools.execute('SLACK_SENDS_A_MESSAGE_TO_A_SLACK_CHANNEL', {
-    userId: ENTITY.system,
-    arguments: { channel, text, markdown_text: text },
-  });
-}

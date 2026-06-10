@@ -3,7 +3,7 @@ import { eq, like } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { slackPost } from '../../core/composio.js';
+import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
 
 const CAL_LINK = process.env.CAL_LINK ?? 'https://cal.com/observal/concierge';
@@ -53,8 +53,8 @@ export async function buildDossier(signup: { email: string; name?: string; compa
   }
 
   const sourceTag = knownContact ? '🎯 outreach-sourced' : knownAccount ? '📋 known account' : '🆕 organic';
-  await slackPost(
-    config.slack.newSignups,
+  await discordPost(
+    config.discord.newSignups,
     `*New signup* ${sourceTag}\n${lines}\n\n→ Offer concierge within the hour: ${CAL_LINK}`,
   ).catch(() => {});
 

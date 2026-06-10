@@ -3,7 +3,8 @@ import { eq, isNull, and } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { getComposio, ENTITY, slackPost } from '../../core/composio.js';
+import { getComposio, ENTITY } from '../../core/composio.js';
+import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
 
 const classificationSchema = z.object({
@@ -84,8 +85,8 @@ export async function runReplyTriager() {
         }
       }
 
-      await slackPost(
-        config.slack.replies,
+      await discordPost(
+        config.discord.replies,
         `*${out.classification.toUpperCase()}* from ${msg.sender} (inbox: ${inbox.email})\n> ${out.summary}\n\n*Suggested draft:*\n${out.suggestedDraft || '_none_'}\n\n_Reply manually from ${inbox.email} — the triager never sends._`,
       ).catch(() => {});
 

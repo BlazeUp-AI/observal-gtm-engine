@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { slackPost } from '../../core/composio.js';
+import { discordPost } from '../../core/discord.js';
 import { fetchHnLeads } from './sources/hn.js';
 import { fetchGithubLeads } from './sources/github.js';
 import { fetchJobspyLeads } from './sources/jobspy.js';
@@ -107,5 +107,5 @@ export async function runProspector() {
 
   const summary = `Prospector: ${leads.length} leads fetched, ${scored} scored, ${qualified} qualified (≥40). High-priority (≥70) accounts are status=qualified.`;
   await audit('prospector', 'run.end', { leads: leads.length, scored, qualified });
-  await slackPost(config.slack.signals, summary).catch(() => {});
+  await discordPost(config.discord.signals, summary).catch(() => {});
 }
