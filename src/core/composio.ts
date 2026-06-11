@@ -23,3 +23,11 @@ export function getComposio(): Composio<VercelProvider> | null {
 export const ENTITY = {
   system: 'gtm-engine', // Sheets, GitHub, Reddit, X
 };
+
+/** True when Composio has an ACTIVE connected account for the toolkit (e.g. reddit). */
+export async function isToolkitConnected(toolkitSlug: string): Promise<boolean> {
+  const composio = getComposio();
+  if (!composio) return false;
+  const connected = await composio.connectedAccounts.list({ userIds: [ENTITY.system], toolkitSlugs: [toolkitSlug] });
+  return connected.items.some((a) => a.status === 'ACTIVE');
+}

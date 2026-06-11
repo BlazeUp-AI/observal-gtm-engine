@@ -89,6 +89,11 @@ export const config = {
     'prompt versioning', 'track agents', 'agent inventory', 'agent audit',
     'agent governance', 'which agents', 'agent registry', 'agent sprawl',
   ],
+
+  signalScout: {
+    redditEnabled: process.env.SIGNAL_SCOUT_REDDIT !== 'false',
+    redditSubreddits: (process.env.SIGNAL_SCOUT_REDDIT_SUBS ?? 'AI_Agents,LangChain').split(',').map((s) => s.trim()).filter(Boolean),
+  },
 };
 
 function required(name: string): string {

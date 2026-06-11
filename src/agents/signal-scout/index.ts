@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
-import { getComposio, ENTITY } from '../../core/composio.js';
+import { getComposio, ENTITY, isToolkitConnected } from '../../core/composio.js';
 import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
 
@@ -39,32 +39,47 @@ export async function runSignalScout(hoursBack = 24) {
     }
   }
 
-  // --- Reddit via Composio (r/AI_Agents, r/LangChain) — skips until connected ---
-  const composio = getComposio();
-  if (composio) {
-    for (const sub of ['AI_Agents', 'LangChain']) {
-      try {
-        const result = await composio.tools.execute('REDDIT_RETRIEVE_REDDIT_POST', {
-          userId: ENTITY.system,
-          arguments: { subreddit: sub, size: 25 },
-        });
-        const raw = result.data as {
-          posts?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number }[];
-          posts_list?: { data?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number } }[];
-        };
-        const posts =
-          raw.posts ??
-          raw.posts_list?.map((item) => item.data).filter((p): p is NonNullable<typeof p> => Boolean(p)) ??
-          [];
-        const kw = new RegExp(config.icpKeywords.map((k) => k.replace(/\s+/g, '\\s+')).join('|'), 'i');
-        for (const p of posts) {
-          const text = `${p.title ?? ''} ${p.selftext ?? ''}`;
-          if (!kw.test(text)) continue;
-          found.push({ source: 'reddit', url: `https://reddit.com${p.permalink}`, author: p.author ?? '?', snippet: text.replace(/\s+/g, ' ').slice(0, 600), postedAt: p.created_utc });
+  // --- Reddit via Composio (r/AI_Agents, r/LangChain) — requires ACTIVE Composio Reddit connection ---
+  let redditHits = 0;
+  if (config.signalScout.redditEnabled) {
+    const composio = getComposio();
+    if (!composio) {
+      await audit('signal-scout', 'reddit.skipped', { reason: 'COMPOSIO_API_KEY missing' });
+    } else if (!(await isToolkitConnected('reddit'))) {
+      await audit('signal-scout', 'reddit.skipped', { reason: 'Reddit not connected — run: npm run composio:reddit' });
+    } else {
+      const kw = new RegExp(config.icpKeywords.map((k) => k.replace(/\s+/g, '\\s+')).join('|'), 'i');
+      for (const sub of config.signalScout.redditSubreddits) {
+        try {
+          const result = await composio.tools.execute('REDDIT_RETRIEVE_REDDIT_POST', {
+            userId: ENTITY.system,
+            arguments: { subreddit: sub, size: 25 },
+          });
+          const raw = result.data as {
+            posts?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number }[];
+            posts_list?: { data?: { title?: string; selftext?: string; permalink?: string; author?: string; created_utc?: number } }[];
+          };
+          const posts =
+            raw.posts ??
+            raw.posts_list?.map((item) => item.data).filter((p): p is NonNullable<typeof p> => Boolean(p)) ?? [];
+          for (const p of posts) {
+            if (p.created_utc != null && p.created_utc < since) continue;
+            const text = `${p.title ?? ''} ${p.selftext ?? ''}`;
+            if (!kw.test(text)) continue;
+            found.push({
+              source: 'reddit',
+              url: `https://reddit.com${p.permalink}`,
+              author: p.author ?? '?',
+              snippet: text.replace(/\s+/g, ' ').slice(0, 600),
+              postedAt: p.created_utc,
+            });
+            redditHits++;
+          }
+        } catch (err) {
+          await audit('signal-scout', 'reddit.failed', { sub, error: String(err).slice(0, 150) });
         }
-      } catch (err) {
-        await audit('signal-scout', 'reddit.failed', { sub, error: String(err).slice(0, 150) });
       }
+      await audit('signal-scout', 'reddit.scanned', { hits: redditHits, subs: config.signalScout.redditSubreddits });
     }
   }
 

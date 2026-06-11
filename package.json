@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "composio:status": "tsx scripts/setup-composio.ts status",
     "composio:reddit": "tsx scripts/setup-composio.ts reddit",
-    "composio:sheets": "tsx scripts/setup-composio.ts sheets"
+    "composio:sheets": "tsx scripts/setup-composio.ts sheets",
+    "composio:reddit:test": "tsx scripts/test-reddit-composio.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.0",
