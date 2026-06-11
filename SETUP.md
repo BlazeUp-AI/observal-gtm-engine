@@ -7,7 +7,7 @@ The engine is feature-complete and runs in `DRY_RUN=true` today. Each section be
 ## 0. Clone & install (any machine / VPS)
 
 ```powershell
-git clone https://github.com/aryaniyaps/observal-gtm-engine.git
+git clone https://github.com/BlazeUp-AI/observal-gtm-engine.git
 cd observal-gtm-engine
 npm install
 copy .env.example .env

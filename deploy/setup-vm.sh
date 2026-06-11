@@ -4,7 +4,7 @@
 # Afterwards copy .env to /opt/gtm-engine/.env and: systemctl restart gtm-scheduler gtm-server
 set -euo pipefail
 
-REPO=https://github.com/aryaniyaps/observal-gtm-engine.git
+REPO=https://github.com/BlazeUp-AI/observal-gtm-engine.git
 DIR=/opt/gtm-engine
 
 echo "== swap (e2-micro has 1GB RAM) =="
