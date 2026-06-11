@@ -9,17 +9,27 @@ const SIDECAR_DIR = join(here, '..', '..', '..', '..', 'services', 'jobspy');
 const VENV_PY_WIN = join(SIDECAR_DIR, '.venv', 'Scripts', 'python.exe');
 const VENV_PY_NIX = join(SIDECAR_DIR, '.venv', 'bin', 'python');
 
+export type JobspyOptions = {
+  /** Job boards to scrape. Default: indeed + linkedin */
+  sites?: ('indeed' | 'linkedin')[];
+  /** Max posting age in hours. Default: 14 days */
+  hoursOld?: number;
+};
+
 /**
  * JobSpy sidecar — job-board hiring signals (playbook §9.3 A1 source 1).
  * Requires one-time setup: python -m venv services/jobspy/.venv && pip install python-jobspy.
  * Returns [] with a console note when the sidecar isn't set up — never blocks the run.
  */
-export async function fetchJobspyLeads(): Promise<RawLead[]> {
+export async function fetchJobspyLeads(opts?: JobspyOptions): Promise<RawLead[]> {
   const python = existsSync(VENV_PY_WIN) ? VENV_PY_WIN : existsSync(VENV_PY_NIX) ? VENV_PY_NIX : 'python3';
+  const sites = (opts?.sites ?? ['indeed', 'linkedin']).join(',');
+  const hours = String(opts?.hoursOld ?? 24 * 14);
+  const args = [join(SIDECAR_DIR, 'scrape.py'), '--sites', sites, '--hours', hours];
 
   return new Promise((resolve) => {
     const leads: RawLead[] = [];
-    const proc = spawn(python, [join(SIDECAR_DIR, 'scrape.py')], { timeout: 10 * 60_000 });
+    const proc = spawn(python, args, { timeout: 10 * 60_000 });
 
     let buffer = '';
     proc.stdout.on('data', (chunk: Buffer) => {
@@ -30,8 +40,16 @@ export async function fetchJobspyLeads(): Promise<RawLead[]> {
         buffer = buffer.slice(nl + 1);
         if (!line) continue;
         try {
-          const obj = JSON.parse(line) as RawLead;
-          if (obj.url && obj.text) leads.push({ ...obj, source: 'jobspy' });
+          const obj = JSON.parse(line) as RawLead & { company?: string; title?: string };
+          if (obj.url && obj.text) {
+            leads.push({
+              ...obj,
+              source: 'jobspy',
+              author: obj.author ?? obj.company,
+              company: obj.company,
+              title: obj.title,
+            });
+          }
         } catch {
           /* skip malformed line */
         }

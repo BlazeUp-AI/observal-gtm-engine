@@ -3,6 +3,8 @@ export interface RawLead {
   url: string;
   text: string; // title + snippet/body, trimmed
   author?: string;
+  company?: string;
+  title?: string;
   postedAt?: number; // unix seconds
   meta?: { repo?: string }; // github: the agent repo, for champion/commit-email discovery
 }

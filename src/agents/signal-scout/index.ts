@@ -5,6 +5,15 @@ import { config } from '../../core/config.js';
 import { getComposio, ENTITY, isToolkitConnected } from '../../core/composio.js';
 import { discordPost } from '../../core/discord.js';
 import { completeJson } from '../../core/llm.js';
+import { fetchLinkedInJobSignals } from './sources/linkedin.js';
+
+type SignalHit = { source: 'hn' | 'reddit' | 'linkedin'; url: string; author: string; snippet: string; postedAt?: number };
+
+function signalAuthorLine(hit: SignalHit): string {
+  if (hit.source === 'reddit') return `u/${hit.author}`;
+  if (hit.source === 'linkedin') return hit.author;
+  return hit.author;
+}
 
 const relevanceSchema = z.object({
   relevance: z.number().min(0).max(100).describe('how strongly this is someone feeling agent-tracking/governance pain RIGHT NOW'),
@@ -13,13 +22,13 @@ const relevanceSchema = z.object({
 
 /**
  * Signal Scout — hourly. Playbook §9.3 A3 + §9.5 C1.
- * HN (Algolia, no auth) + Reddit (via Composio when connected) keyword scan ->
+ * HN (Algolia) + Reddit (Composio) + LinkedIn jobs (JobSpy) keyword scan ->
  * Gemini relevance score -> intent_feed + Slack #signals.
  * Hits jump the outreach queue for HUMAN same-day replies — the scout never replies.
  */
 export async function runSignalScout(hoursBack = 24) {
   await audit('signal-scout', 'run.start', { hoursBack });
-  const found: { source: 'hn' | 'reddit'; url: string; author: string; snippet: string; postedAt?: number }[] = [];
+  const found: SignalHit[] = [];
 
   // --- HN: comments + stories matching pain keywords ---
   const since = Math.floor(Date.now() / 1000) - hoursBack * 3600;
@@ -83,6 +92,23 @@ export async function runSignalScout(hoursBack = 24) {
     }
   }
 
+  // --- LinkedIn job posts via JobSpy (hiring intent — companies building agent stacks) ---
+  if (config.signalScout.linkedinEnabled) {
+    try {
+      const jobs = await fetchLinkedInJobSignals(hoursBack);
+      const kw = new RegExp(config.icpKeywords.map((k) => k.replace(/\s+/g, '\\s+')).join('|'), 'i');
+      let linkedinHits = 0;
+      for (const job of jobs) {
+        if (!kw.test(job.snippet)) continue;
+        found.push(job);
+        linkedinHits++;
+      }
+      await audit('signal-scout', 'linkedin.scanned', { hits: linkedinHits, raw: jobs.length });
+    } catch (err) {
+      await audit('signal-scout', 'linkedin.failed', { error: String(err).slice(0, 150) });
+    }
+  }
+
   // --- Score + store new hits ---
   let stored = 0;
   for (const hit of found) {
@@ -109,7 +135,10 @@ export async function runSignalScout(hoursBack = 24) {
 
     await db.insert(schema.intentFeed).values({ source: hit.source, url: hit.url, author: hit.author, snippet: hit.snippet, relevanceScore: relevance, postedAt: hit.postedAt }).onConflictDoNothing();
     stored++;
-    await discordPost(config.discord.signals, `*Intent signal (${relevance})* — ${hit.source} u/${hit.author}\n> ${hit.snippet.slice(0, 250)}\n${hit.url}\n_${why}_ · reply personally, today.`).catch(() => {});
+    await discordPost(
+      config.discord.signals,
+      `*Intent signal (${relevance})* — ${hit.source} ${signalAuthorLine(hit)}\n> ${hit.snippet.slice(0, 250)}\n${hit.url}\n_${why}_ · reply personally, today.`,
+    ).catch(() => {});
     void import('../../core/sheets.js').then(async ({ appendOutcomeRow, defaultOutcomeMeta }) => {
       const meta = await defaultOutcomeMeta();
       return appendOutcomeRow({

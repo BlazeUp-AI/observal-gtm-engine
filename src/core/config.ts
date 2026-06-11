@@ -93,6 +93,7 @@ export const config = {
   signalScout: {
     redditEnabled: process.env.SIGNAL_SCOUT_REDDIT !== 'false',
     redditSubreddits: (process.env.SIGNAL_SCOUT_REDDIT_SUBS ?? 'AI_Agents,LangChain').split(',').map((s) => s.trim()).filter(Boolean),
+    linkedinEnabled: process.env.SIGNAL_SCOUT_LINKEDIN !== 'false',
   },
 };
 

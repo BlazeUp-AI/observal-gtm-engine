@@ -1,11 +1,15 @@
-"""JobSpy sidecar — invoked by the Prospector as a subprocess.
+"""JobSpy sidecar — invoked by the Prospector and Signal Scout as a subprocess.
 
-Usage: python scrape.py            (writes JSON lines to stdout)
+Usage:
+  python scrape.py
+  python scrape.py --sites linkedin --hours 48
+
 Setup: python -m venv .venv && .venv\\Scripts\\pip install python-jobspy
 
-Scrapes Indeed + LinkedIn for agent-stack hiring signals. Each posting that
-mentions an agent framework is emitted as a lead for the scoring pipeline.
+Scrapes job boards (Indeed + LinkedIn by default) for agent-stack hiring signals.
+Each posting that mentions an agent framework is emitted as one JSON line on stdout.
 """
+import argparse
 import json
 import sys
 
@@ -13,6 +17,12 @@ SEARCHES = ["LangGraph", "CrewAI", "AutoGen agents", "agentic engineer", "AI age
 KEYWORDS = ["langgraph", "crewai", "autogen", "agentic", "openai agents", "bedrock agents"]
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sites", default="indeed,linkedin", help="Comma-separated boards: indeed, linkedin")
+    parser.add_argument("--hours", type=int, default=24 * 14, help="Max age of postings in hours")
+    args = parser.parse_args()
+    site_name = [s.strip() for s in args.sites.split(",") if s.strip()]
+
     try:
         from jobspy import scrape_jobs  # type: ignore
     except ImportError:
@@ -23,10 +33,10 @@ def main() -> None:
     for term in SEARCHES:
         try:
             jobs = scrape_jobs(
-                site_name=["indeed", "linkedin"],
+                site_name=site_name,
                 search_term=term,
                 results_wanted=25,
-                hours_old=24 * 14,
+                hours_old=args.hours,
                 country_indeed="USA",
             )
         except Exception as exc:  # one failing board/search must not kill the run
@@ -41,13 +51,18 @@ def main() -> None:
             blob = " ".join(str(row.get(k) or "") for k in ("title", "description", "company"))
             if not any(kw in blob.lower() for kw in KEYWORDS):
                 continue
+            company = str(row.get("company") or "unknown")
+            title = str(row.get("title") or "")
             print(
                 json.dumps(
                     {
                         "source": "jobspy",
                         "url": url,
-                        "text": f"Job post by {row.get('company')}: {row.get('title')} — "
+                        "text": f"Job post by {company}: {title} — "
                         + str(row.get("description") or "")[:1500],
+                        "author": company,
+                        "company": company,
+                        "title": title,
                         "postedAt": None,
                     }
                 )

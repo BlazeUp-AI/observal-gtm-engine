@@ -45,7 +45,7 @@ function bucketSignupChannel(utmSource: string, utmMedium: string): keyof Signup
   const src = utmSource.toLowerCase();
   const med = utmMedium.toLowerCase();
   if (med === 'email' || ['outreach', 'email', 'cold_email', 'cold-email'].includes(src)) return 'email';
-  if (['community', 'hn', 'reddit', 'discord', 'slack', 'twitter', 'x'].includes(src)) return 'community';
+  if (['community', 'hn', 'reddit', 'linkedin', 'discord', 'slack', 'twitter', 'x'].includes(src)) return 'community';
   if (['content', 'blog', 'seo', 'newsletter'].includes(src)) return 'content';
   if (['invite', 'referral', 'ref'].includes(src)) return 'invite';
   return 'organic';

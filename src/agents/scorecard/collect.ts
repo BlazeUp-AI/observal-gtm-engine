@@ -82,6 +82,10 @@ export async function collectDailyScorecard(date = new Date()): Promise<DailySco
     .select({ n: sql<number>`count(*)` })
     .from(schema.intentFeed)
     .where(sql`${schema.intentFeed.source} = 'reddit' AND ${schema.intentFeed.createdAt} >= ${dayStartSec}`);
+  const [signalsLinkedinToday] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(schema.intentFeed)
+    .where(sql`${schema.intentFeed.source} = 'linkedin' AND ${schema.intentFeed.createdAt} >= ${dayStartSec}`);
 
   const inboxes = await db.query.inboxes.findMany();
   const inboxesActive = inboxes.filter((i) => !i.paused).length;
@@ -185,6 +189,7 @@ export async function collectDailyScorecard(date = new Date()): Promise<DailySco
     intent_signals_cumulative: signalsTotal.n ?? 0,
     intent_signals_hn_today: signalsHnToday.n ?? 0,
     intent_signals_reddit_today: signalsRedditToday.n ?? 0,
+    intent_signals_linkedin_today: signalsLinkedinToday.n ?? 0,
     inboxes_active: inboxesActive,
     inboxes_paused: inboxesPaused,
     posthog_dashboard: POSTHOG_DASHBOARD,

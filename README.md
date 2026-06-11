@@ -10,7 +10,7 @@ Brains: **Gemini** (via Vercel AI SDK). Email: **AgentMail** (API inboxes on col
 |---|---|---|
 | Prospector | nightly 02:00 | built — HN + GitHub + JobSpy sources, Gemini ICP scoring |
 | Outreach Engine | every 30 min, 08–17 | built — state machine, personalization, QA, dry-run verified |
-| Signal Scout | hourly | built — HN live + Reddit via Composio when connected |
+| Signal Scout | hourly | built — HN + Reddit (Composio) + LinkedIn jobs (JobSpy) |
 | Reply Triager | every 5 min | built — polls AgentMail inboxes |
 | Dossier Builder | signup webhook | built — pending Discord webhook |
 | Scorecard Reporter | daily 08:00 | built — PostHog wiring stubbed |

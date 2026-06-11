@@ -106,7 +106,7 @@ export const inboxes = sqliteTable('inboxes', {
 
 export const intentFeed = sqliteTable('intent_feed', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  source: text('source').notNull(), // reddit | hn | x | github
+  source: text('source').notNull(), // reddit | hn | linkedin | x | github
   url: text('url').notNull().unique(),
   author: text('author'),
   snippet: text('snippet'),

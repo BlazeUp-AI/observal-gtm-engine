@@ -115,7 +115,21 @@ The engine uses Composio only for **Reddit** (Signal Scout). Email is AgentMail;
    npm run composio:status
    ```
 
-**Verify:** `npm run cli -- scout run 48` — audit log should show Reddit results alongside HN (no `reddit.failed` entries).
+**Verify:** `npm run cli -- scout run 48` — audit log should show `reddit.scanned` alongside HN (no `reddit.failed` entries).
+
+### 3b. LinkedIn intent signals (JobSpy — no OAuth)
+
+Signal Scout scans **LinkedIn job postings** (not social posts — Composio LinkedIn cannot search feeds). Uses the same JobSpy sidecar as the Prospector:
+
+```powershell
+cd services/jobspy
+python -m venv .venv
+.\.venv\Scripts\pip install python-jobspy   # or: .venv/bin/pip on Linux
+```
+
+Disable with `SIGNAL_SCOUT_LINKEDIN=false` in `.env`.
+
+**Verify:** `npm run cli -- scout run 48` — audit log should show `linkedin.scanned`.
 
 ---
 
@@ -274,7 +288,7 @@ The Scorecard agent appends one row per day to **Daily Scorecard** (metrics alig
 | Viral loop | `invites_sent/accepted_today`, `invites_sent/accepted_cumulative`, `invite_accept_rate_pct`, `k_factor` |
 | Pipeline | `accounts_total/qualified`, `contacts_total/verified/queued/in_sequence/replied/activated` |
 | Email | `emails_sent_today/total`, `emails_bounced`, `bounce_rate_pct`, `replies_today/total`, `replies_positive/question/objection/ooo/unsubscribe`, `positive_reply_rate_pct` |
-| Community | `intent_signals_today/cumulative`, `intent_signals_hn/reddit_today` |
+| Community | `intent_signals_today/cumulative`, `intent_signals_hn/reddit/linkedin_today` |
 | Deliverability | `inboxes_active`, `inboxes_paused` |
 | Links | `posthog_dashboard`, `scorecard_sheet` |
 

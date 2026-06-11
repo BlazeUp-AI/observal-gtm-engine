@@ -6,7 +6,7 @@ import { ENTITY, getComposio } from './composio.js';
 import { campaignDayNumber, isDryRun } from './go-live.js';
 
 /** Bump when columns change — rewrites header row on next sync. */
-export const SHEETS_SCHEMA_VERSION = '4';
+export const SHEETS_SCHEMA_VERSION = '5';
 
 /**
  * Daily Scorecard — one row per day. Grouped to match playbook §8 + PostHog dashboard.
@@ -70,6 +70,7 @@ export const SCORECARD_COLUMNS = [
   'intent_signals_cumulative',
   'intent_signals_hn_today',
   'intent_signals_reddit_today',
+  'intent_signals_linkedin_today',
   // --- deliverability ---
   'inboxes_active',
   'inboxes_paused',
