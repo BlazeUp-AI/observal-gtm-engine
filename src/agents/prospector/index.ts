@@ -3,6 +3,7 @@ import { db, schema } from '../../core/db.js';
 import { audit } from '../../core/audit.js';
 import { config } from '../../core/config.js';
 import { discordPost } from '../../core/discord.js';
+import { syncLeadsToSheet } from '../../core/sheets.js';
 import { fetchHnLeads } from './sources/hn.js';
 import { fetchGithubLeads } from './sources/github.js';
 import { fetchJobspyLeads } from './sources/jobspy.js';
@@ -103,6 +104,13 @@ export async function runProspector() {
     } catch (err) {
       await audit('prospector', 'score.failed', { url: lead.url, error: String(err) });
     }
+  }
+
+  // Live lead visibility — push newly created accounts/contacts to the Leads tab.
+  try {
+    await syncLeadsToSheet();
+  } catch (err) {
+    await audit('prospector', 'leads.sync.failed', { error: String(err).slice(0, 200) });
   }
 
   const summary = `Prospector: ${leads.length} leads fetched, ${scored} scored, ${qualified} qualified (≥40). High-priority (≥70) accounts are status=qualified.`;

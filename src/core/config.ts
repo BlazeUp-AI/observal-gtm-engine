@@ -34,6 +34,8 @@ export const config = {
     spreadsheetId: process.env.GOOGLE_SHEETS_ID ?? '1khilsBPv1RVBxYyu5AE5HI_0toF2V-po97xHxHT86l4',
     scorecardTab: process.env.GOOGLE_SHEETS_SCORECARD_TAB ?? 'Daily Scorecard',
     outcomesTab: process.env.GOOGLE_SHEETS_OUTCOMES_TAB ?? 'Outcomes',
+    leadsTab: process.env.GOOGLE_SHEETS_LEADS_TAB ?? 'Leads',
+    leadsPoc: process.env.LEADS_POC ?? 'Aryan',
   },
 
   reacherUrl: process.env.REACHER_URL ?? 'http://localhost:8080',

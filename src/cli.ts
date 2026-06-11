@@ -5,6 +5,7 @@ import { runReplyTriager } from './agents/reply-triager/index.js';
 import { runScorecard } from './agents/scorecard/index.js';
 import { runWarmup } from './agents/warmup/index.js';
 import { getGoLiveStatus, maybeAutoGoLive } from './core/go-live.js';
+import { syncLeadsToSheet } from './core/sheets.js';
 import { db, schema } from './core/db.js';
 import { getAgentMail } from './core/agentmail.js';
 import { eq } from 'drizzle-orm';
@@ -17,6 +18,7 @@ const usage = `gtm-engine CLI
   scout run [hours]       run Signal Scout once
   triage run              run Reply Triager once
   report now              run Scorecard Reporter once
+  leads sync              push new accounts/contacts to the Leads sheet tab
   warmup run              run Warmup agent once (safe: own inboxes + seeds only)
   go-live status          show auto go-live readiness + campaign clock
   go-live check           run the auto go-live gate now (same as scheduler)
@@ -106,6 +108,11 @@ async function main() {
     case 'scout run': return runSignalScout(rest[0] ? Number(rest[0]) : 24);
     case 'triage run': return runReplyTriager();
     case 'report now': return runScorecard();
+    case 'leads sync': {
+      const res = await syncLeadsToSheet();
+      console.log(`Leads synced to sheet: ${res.accounts} accounts, ${res.contacts} contacts.`);
+      return;
+    }
     case 'warmup run': return runWarmup();
     case 'go-live status': {
       const s = await getGoLiveStatus();

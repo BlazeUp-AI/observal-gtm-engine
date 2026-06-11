@@ -282,6 +282,12 @@ The Scorecard agent appends one row per day to **Daily Scorecard** (metrics alig
 
 `timestamp`, `date`, `campaign_day`, `outcome_type`, `summary`, `entity`, `company`, `channel`, `url`, `source`, `relevance_score`, `engine_mode`
 
+#### Leads columns (16)
+
+`added_at`, `lead_type` (account | contact), `company`, `domain`, `archetype`, `icp_score`, `account_status`, `contact_name`, `contact_title`, `contact_email`, `email_status`, `contact_status`, `source`, `source_url`, `signal_summary`, `poc`
+
+The **Leads** tab gets one row per prospected account and one per discovered contact, appended automatically at the end of every Prospector run (watermark-based, no duplicates). `poc` defaults to **Aryan** (`LEADS_POC` env var to change). Manual sync: `npm run cli -- leads sync`.
+
 **PostHog dashboard:** [Observal GTM — 20-Day Playbook](https://us.posthog.com/project/464332/dashboard/1694728) links to the same sheet in its header tile.
 
 ---
